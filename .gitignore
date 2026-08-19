@@ -44,4 +44,4 @@ app-example
 
 .env
 .env.local
-.env.*
+.env.*.env
