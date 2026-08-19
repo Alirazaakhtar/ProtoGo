@@ -1,98 +1,299 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useCallback, useState } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { supabase } from '@/lib/supabase';
+
+type SchoolClass = {
+  id: string;
+  name: string;
+  school_year: string | null;
+};
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [loading, setLoading] = useState(true);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const loadClasses = useCallback(async () => {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from('classes')
+      .select('id, name, school_year')
+      .order('name');
+
+    if (error) {
+      console.error('Fejl ved hentning af klasser:', error);
+    } else {
+      setClasses(data ?? []);
+    }
+
+    setLoading(false);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadClasses();
+    }, [loadClasses])
+  );
+
+  async function logout() {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error('Logout fejl:', error);
+    }
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Godmorgen</Text>
+          <Text style={styles.title}>Dine klasser</Text>
+        </View>
+
+        <Pressable
+          onPress={logout}
+          style={({ pressed }) => [
+            styles.logoutButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.logoutText}>Log ud</Text>
+        </Pressable>
+      </View>
+
+      <Pressable
+        onPress={() => router.push('/classes/create')}
+        style={({ pressed }) => [
+          styles.createButton,
+          pressed && styles.pressed,
+        ]}
+      >
+        <Text style={styles.createButtonText}>
+          + Opret klasse
+        </Text>
+      </Pressable>
+
+      <Pressable
+  onPress={() =>
+    router.push('/invites')
+  }
+  style={({ pressed }) => [
+    styles.inviteButton,
+    pressed && styles.pressed,
+  ]}
+>
+  <Text style={styles.inviteButtonText}>
+    Invitationer
+  </Text>
+</Pressable>
+
+      {loading ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>
+            Henter klasser...
+          </Text>
+        </View>
+      ) : classes.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>
+            Ingen klasser endnu
+          </Text>
+
+          <Text style={styles.emptyText}>
+            Opret din første klasse for at komme i gang.
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.classList}>
+          {classes.map((schoolClass) => (
+            <Pressable
+              key={schoolClass.id}
+              onPress={() =>
+                router.push(`/classes/${schoolClass.id}`)
+              }
+              style={({ pressed }) => [
+                styles.card,
+                pressed && styles.cardPressed,
+              ]}
+            >
+              <View>
+                <Text style={styles.className}>
+                  {schoolClass.name}
+                </Text>
+
+                <Text style={styles.schoolYear}>
+                  {schoolClass.school_year ?? 'Intet skoleår'}
+                </Text>
+              </View>
+
+              <View style={styles.cardRight}>
+                <View style={styles.status}>
+                  <Text style={styles.statusText}>
+                    Åbn klasse
+                  </Text>
+                </View>
+
+                <Text style={styles.arrow}>›</Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F6F8',
+    paddingHorizontal: 20,
+    paddingTop: 70,
+  },
+
+  header: {
+    marginBottom: 28,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+
+  greeting: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+
+  title: {
+    fontSize: 34,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  logoutButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+
+  logoutText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+
+  createButton: {
+    backgroundColor: '#111827',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+
+  createButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  classList: {
+    gap: 16,
+  },
+
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 22,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  cardPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
+  },
+
+  className: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  schoolYear: {
+    fontSize: 15,
+    color: '#6B7280',
+    marginTop: 6,
+  },
+
+  cardRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+
+  status: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: '#E0E7FF',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+
+  statusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#3730A3',
   },
+
+  arrow: {
+    fontSize: 28,
+    color: '#9CA3AF',
+  },
+
+  emptyState: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+  },
+
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  emptyText: {
+    fontSize: 15,
+    color: '#6B7280',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+
+  pressed: {
+    opacity: 0.7,
+  },
+  
+  inviteButton: {
+  backgroundColor: '#FFFFFF',
+  paddingVertical: 15,
+  borderRadius: 16,
+  alignItems: 'center',
+  marginBottom: 24,
+},
+
+inviteButtonText: {
+  color: '#111827',
+  fontSize: 16,
+  fontWeight: '600',
+},
 });
