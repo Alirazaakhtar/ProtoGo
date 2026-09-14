@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import BackButton from '@/app/components/BackButton';
-
 import {
   Alert,
   Pressable,
@@ -18,24 +17,26 @@ import {
 
 import { supabase } from '@/lib/supabase';
 
-export default function EditGuardianScreen() {
+export default function EditStudentScreen() {
   const {
+    id,
     studentId,
-    guardianId,
   } = useLocalSearchParams<{
     id: string;
     studentId: string;
-    guardianId: string;
   }>();
 
-  const [name, setName] = useState('');
-
-  const [relationship, setRelationship] =
+  const [firstName, setFirstName] =
     useState('');
 
-  const [phone, setPhone] = useState('');
+  const [lastName, setLastName] =
+    useState('');
 
-  const [email, setEmail] = useState('');
+  const [birthDate, setBirthDate] =
+    useState('');
+
+  const [phone, setPhone] =
+    useState('');
 
   const [loading, setLoading] =
     useState(true);
@@ -44,11 +45,11 @@ export default function EditGuardianScreen() {
     useState(false);
 
   useEffect(() => {
-    loadGuardian();
-  }, [guardianId, studentId]);
+    loadStudent();
+  }, [id, studentId]);
 
-  async function loadGuardian() {
-    if (!guardianId || !studentId) {
+  async function loadStudent() {
+    if (!id || !studentId) {
       return;
     }
 
@@ -56,78 +57,76 @@ export default function EditGuardianScreen() {
 
     try {
       const {
-        data: guardian,
-        error: guardianError,
+        data,
+        error,
       } = await supabase
-        .from('guardians')
+        .from('students')
         .select(`
           id,
-          full_name,
-          phone,
-          email
+          first_name,
+          last_name,
+          birth_date,
+          phone
         `)
-        .eq('id', guardianId)
+        .eq('id', studentId)
+        .eq('class_id', id)
         .single();
 
-      if (guardianError) {
-        throw guardianError;
+      if (error) {
+        throw error;
       }
 
-      const {
-        data: relation,
-        error: relationError,
-      } = await supabase
-        .from('student_guardians')
-        .select(`
-          relationship
-        `)
-        .eq('student_id', studentId)
-        .eq(
-          'guardian_id',
-          guardianId
-        )
-        .single();
+      setFirstName(
+        data.first_name ?? ''
+      );
 
-      if (relationError) {
-        throw relationError;
-      }
+      setLastName(
+        data.last_name ?? ''
+      );
 
-      setName(
-        guardian.full_name
+      setBirthDate(
+        data.birth_date ?? ''
       );
 
       setPhone(
-        guardian.phone ?? ''
-      );
-
-      setEmail(
-        guardian.email ?? ''
-      );
-
-      setRelationship(
-        relation.relationship ?? ''
+        data.phone ?? ''
       );
     } catch (error) {
       console.error(error);
 
       Alert.alert(
         'Fejl',
-        'Kunne ikke hente forælderen.'
+        'Kunne ikke hente eleven.'
       );
     } finally {
       setLoading(false);
     }
   }
 
-  async function saveGuardian() {
-    if (!guardianId || !studentId) {
+  async function saveStudent() {
+    if (!studentId || !id) {
       return;
     }
 
-    if (!name.trim()) {
+    if (
+      !firstName.trim() ||
+      !lastName.trim()
+    ) {
       Alert.alert(
         'Navn mangler',
-        'Skriv forælderens navn.'
+        'Skriv elevens fornavn og efternavn.'
+      );
+
+      return;
+    }
+
+    if (
+      birthDate.trim() &&
+      !isValidDate(birthDate.trim())
+    ) {
+      Alert.alert(
+        'Forkert dato',
+        'Fødselsdato skal skrives som YYYY-MM-DD.'
       );
 
       return;
@@ -136,57 +135,30 @@ export default function EditGuardianScreen() {
     try {
       setSaving(true);
 
-      const { error: guardianError } =
-        await supabase
-          .from('guardians')
-          .update({
-            full_name: name.trim(),
-
-            phone:
-              phone.trim() || null,
-
-            email:
-              email
-                .trim()
-                .toLowerCase() ||
-              null,
-          })
-          .eq(
-            'id',
-            guardianId
-          );
-
-      if (guardianError) {
-        Alert.alert(
-          'Kunne ikke gemme',
-          guardianError.message
-        );
-
-        return;
-      }
-
-      const {
-        error: relationError,
-      } = await supabase
-        .from('student_guardians')
+      const { error } = await supabase
+        .from('students')
         .update({
-          relationship:
-            relationship.trim() ||
+          first_name:
+            firstName.trim(),
+
+          last_name:
+            lastName.trim(),
+
+          birth_date:
+            birthDate.trim() ||
+            null,
+
+          phone:
+            phone.trim() ||
             null,
         })
-        .eq(
-          'student_id',
-          studentId
-        )
-        .eq(
-          'guardian_id',
-          guardianId
-        );
+        .eq('id', studentId)
+        .eq('class_id', id);
 
-      if (relationError) {
+      if (error) {
         Alert.alert(
-          'Kunne ikke gemme relation',
-          relationError.message
+          'Kunne ikke gemme elev',
+          error.message
         );
 
         return;
@@ -198,38 +170,44 @@ export default function EditGuardianScreen() {
     }
   }
 
-  function removeGuardian() {
-  if (!studentId || !guardianId) {
+  function deactivateStudent() {
+  if (!studentId || !id) {
     return;
   }
 
   Alert.alert(
-    'Fjern forælder',
-    `Vil du fjerne ${name} fra eleven?`,
+    'Fjern elev',
+    'Vil du fjerne eleven fra klassen? Tidligere protokoller bliver bevaret.',
     [
       {
         text: 'Annuller',
         style: 'cancel',
       },
       {
-        text: 'Fjern',
+        text: 'Fjern elev',
         style: 'destructive',
         onPress: async () => {
           const { error } = await supabase
-            .from('student_guardians')
-            .delete()
-            .eq('student_id', studentId)
-            .eq('guardian_id', guardianId);
+            .from('students')
+            .update({
+              active: false,
+            })
+            .eq('id', studentId)
+            .eq('class_id', id);
 
           if (error) {
             Alert.alert(
-              'Kunne ikke fjerne forælder',
+              'Kunne ikke fjerne elev',
               error.message
             );
+
             return;
           }
 
-          router.back();
+          router.replace({
+            pathname: '/classes/[id]',
+            params: { id },
+          });
         },
       },
     ]
@@ -240,7 +218,7 @@ export default function EditGuardianScreen() {
     return (
       <View style={styles.center}>
         <Text>
-          Henter forælder...
+          Henter elev...
         </Text>
       </View>
     );
@@ -253,40 +231,54 @@ export default function EditGuardianScreen() {
         styles.content
       }
     >
-
-      <BackButton/>
-      
+        <BackButton/>
       <Text style={styles.eyebrow}>
-        Kontaktperson
+        Elev
       </Text>
 
       <Text style={styles.title}>
-        Rediger forælder
+        Rediger elev
       </Text>
 
       <Text style={styles.label}>
-        Navn
+        Fornavn
       </Text>
 
       <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="Navn"
+        value={firstName}
+        onChangeText={setFirstName}
+        placeholder="Fornavn"
+        autoCapitalize="words"
         style={styles.input}
       />
 
       <Text style={styles.label}>
-        Relation
+        Efternavn
       </Text>
 
       <TextInput
-        value={relationship}
-        onChangeText={
-          setRelationship
-        }
-        placeholder="Fx Mor, Far eller Værge"
+        value={lastName}
+        onChangeText={setLastName}
+        placeholder="Efternavn"
+        autoCapitalize="words"
         style={styles.input}
       />
+
+      <Text style={styles.label}>
+        Fødselsdato
+      </Text>
+
+      <TextInput
+        value={birthDate}
+        onChangeText={setBirthDate}
+        placeholder="YYYY-MM-DD"
+        keyboardType="numbers-and-punctuation"
+        style={styles.input}
+      />
+
+      <Text style={styles.helper}>
+        Fx 2014-05-21
+      </Text>
 
       <Text style={styles.label}>
         Telefon
@@ -300,28 +292,13 @@ export default function EditGuardianScreen() {
         style={styles.input}
       />
 
-      <Text style={styles.label}>
-        E-mail
-      </Text>
-
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="navn@example.dk"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        style={styles.input}
-      />
-
       <Pressable
-        onPress={saveGuardian}
+        onPress={saveStudent}
         disabled={saving}
         style={({ pressed }) => [
           styles.saveButton,
-          pressed &&
-            styles.pressed,
-          saving &&
-            styles.disabled,
+          pressed && styles.pressed,
+          saving && styles.disabled,
         ]}
       >
         <Text
@@ -336,18 +313,38 @@ export default function EditGuardianScreen() {
       </Pressable>
 
       <Pressable
-  onPress={removeGuardian}
+  onPress={deactivateStudent}
   style={({ pressed }) => [
-    styles.removeButton,
+    styles.deleteButton,
     pressed && styles.pressed,
   ]}
 >
-  <Text style={styles.removeButtonText}>
-    Fjern fra elev
+  <Text style={styles.deleteButtonText}>
+    Fjern elev fra klassen
   </Text>
 </Pressable>
-      
     </ScrollView>
+  );
+}
+
+function isValidDate(
+  value: string
+) {
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(
+      value
+    )
+  ) {
+    return false;
+  }
+
+  const date =
+    new Date(
+      `${value}T12:00:00`
+    );
+
+  return !Number.isNaN(
+    date.getTime()
   );
 }
 
@@ -398,6 +395,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
 
+  helper: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: -10,
+    marginBottom: 18,
+  },
+
   saveButton: {
     height: 56,
     borderRadius: 16,
@@ -421,13 +425,13 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
-  removeButton: {
+  deleteButton: {
   marginTop: 18,
   paddingVertical: 14,
   alignItems: 'center',
 },
 
-removeButtonText: {
+deleteButtonText: {
   fontSize: 15,
   fontWeight: '600',
   color: '#DC2626',

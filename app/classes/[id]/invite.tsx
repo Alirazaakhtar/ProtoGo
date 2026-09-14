@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import BackButton from '@/app/components/BackButton';
+
 import {
   Alert,
   Pressable,
@@ -100,9 +102,13 @@ export default function InviteTeacherScreen() {
 
   return (
     <View style={styles.container}>
+
+              <BackButton/>
+
       <Text style={styles.eyebrow}>
         Klasse
       </Text>
+
 
       <Text style={styles.title}>
         Inviter lærer

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import BackButton from '@/app/components/BackButton';
+
 import {
   Alert,
   Pressable,
@@ -58,6 +60,9 @@ export default function CreateClassScreen() {
 
   return (
     <View style={styles.container}>
+        
+        <BackButton/>
+
       <Text style={styles.eyebrow}>Ny klasse</Text>
       <Text style={styles.title}>Opret klasse</Text>
 

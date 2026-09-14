@@ -1,4 +1,7 @@
 import { useCallback, useState } from 'react';
+import BackButton from '@/app/components/BackButton';
+import { Ionicons } from '@expo/vector-icons';
+
 import {
   Pressable,
   ScrollView,
@@ -102,7 +105,6 @@ export default function ClassScreen() {
     }, [loadClass])
   );
 
-  /*
   if (loading) {
     return (
       <View style={styles.center}>
@@ -110,7 +112,6 @@ export default function ClassScreen() {
       </View>
     );
   }
-  */
 
   if (!schoolClass) {
     return (
@@ -127,23 +128,48 @@ export default function ClassScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
+      <BackButton />
+
       {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>
-          {schoolClass.school_year ??
-            'Intet skoleår'}
-        </Text>
+      <View style={styles.headerRow}>
+        <View style={styles.header}>
+          <Text style={styles.eyebrow}>
+            {schoolClass.school_year ??
+              'Intet skoleår'}
+          </Text>
 
-        <Text style={styles.title}>
-          {schoolClass.name}
-        </Text>
+          <Text style={styles.title}>
+            {schoolClass.name}
+          </Text>
 
-        <Text style={styles.subtitle}>
-          {students.length}{' '}
-          {students.length === 1
-            ? 'elev'
-            : 'elever'}
-        </Text>
+          <Text style={styles.subtitle}>
+            {students.length}{' '}
+            {students.length === 1
+              ? 'elev'
+              : 'elever'}
+          </Text>
+        </View>
+
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname:
+                '/classes/[id]/settings',
+              params: { id },
+            })
+          }
+          hitSlop={12}
+          style={({ pressed }) => [
+            styles.settingsButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Ionicons
+            name="settings-outline"
+            size={23}
+            color="#111827"
+          />
+        </Pressable>
       </View>
 
       {/* PROTOKOL */}
@@ -166,25 +192,6 @@ export default function ClassScreen() {
           }
         >
           Tag dagens protokol
-        </Text>
-      </Pressable>
-
-      {/* INVITER LÆRER */}
-      <Pressable
-        onPress={() =>
-          router.push({
-            pathname:
-              '/classes/[id]/invite',
-            params: { id },
-          })
-        }
-        style={({ pressed }) => [
-          styles.inviteButton,
-          pressed && styles.pressed,
-        ]}
-      >
-        <Text style={styles.inviteButtonText}>
-          + Inviter lærer
         </Text>
       </Pressable>
 
@@ -249,7 +256,11 @@ export default function ClassScreen() {
                 ]}
               >
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
+                  <Text
+                    style={
+                      styles.avatarText
+                    }
+                  >
                     {student.first_name
                       .charAt(0)
                       .toUpperCase()}
@@ -265,14 +276,18 @@ export default function ClassScreen() {
                   }
                 >
                   <Text
-                    style={styles.studentName}
+                    style={
+                      styles.studentName
+                    }
                   >
                     {student.first_name}{' '}
                     {student.last_name}
                   </Text>
 
                   <Text
-                    style={styles.studentInfo}
+                    style={
+                      styles.studentInfo
+                    }
                   >
                     {age !== null
                       ? `${age} år`
@@ -343,8 +358,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  header: {
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     marginBottom: 28,
+  },
+
+  header: {
+    flex: 1,
+    paddingRight: 16,
   },
 
   eyebrow: {
@@ -365,33 +388,28 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
+  settingsButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+
   attendanceButton: {
     height: 58,
     borderRadius: 16,
     backgroundColor: '#111827',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 32,
   },
 
   attendanceButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
-  },
-
-  inviteButton: {
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 32,
-  },
-
-  inviteButtonText: {
-    color: '#111827',
-    fontSize: 15,
     fontWeight: '700',
   },
 

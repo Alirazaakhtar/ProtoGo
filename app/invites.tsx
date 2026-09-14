@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react';
+import BackButton from '@/app/components/BackButton';
+
 import {
   Alert,
   Pressable,
@@ -102,6 +104,8 @@ export default function InvitesScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
+        <BackButton/>
+        
       <Text style={styles.eyebrow}>
         Samarbejde
       </Text>

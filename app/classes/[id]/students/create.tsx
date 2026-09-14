@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import BackButton from '@/app/components/BackButton';
+
 import {
   Alert,
   Pressable,
@@ -87,6 +89,9 @@ export default function CreateStudentScreen() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
+
+        <BackButton/>
+        
       <Text style={styles.eyebrow}>
         Ny elev
       </Text>

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import BackButton from '@/app/components/BackButton';
+
 import {
   Alert,
   Pressable,
@@ -123,6 +125,7 @@ export default function CreateGuardianScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
+        <BackButton/>
       <Text style={styles.eyebrow}>
         Kontaktperson
       </Text>

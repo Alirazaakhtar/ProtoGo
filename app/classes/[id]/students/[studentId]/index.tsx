@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react';
+import BackButton from '@/app/components/BackButton';
+
 import {
   Alert,
   Linking,
@@ -131,6 +133,31 @@ export default function StudentScreen() {
     }
   }
 
+  async function openWhatsApp(phone: string) {
+  let number = phone.replace(/\D/g, '');
+
+  // Hvis dansk nummer er gemt som fx 22334455
+  if (number.length === 8) {
+    number = `45${number}`;
+  }
+
+  // Hvis nummeret er gemt som 0045...
+  if (number.startsWith('00')) {
+    number = number.substring(2);
+  }
+
+  try {
+    await Linking.openURL(
+      `https://wa.me/${number}`
+    );
+  } catch {
+    Alert.alert(
+      'Kunne ikke åbne WhatsApp',
+      'WhatsApp kunne ikke åbnes.'
+    );
+  }
+}
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -152,14 +179,37 @@ export default function StudentScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
-      <Text style={styles.eyebrow}>
-        Elev
-      </Text>
+        <BackButton />
 
-      <Text style={styles.title}>
-        {student.first_name}{' '}
-        {student.last_name}
-      </Text>
+      <View style={styles.studentHeader}>
+  <View style={styles.studentHeaderText}>
+    <Text style={styles.eyebrow}>
+      Elev
+    </Text>
+
+    <Text style={styles.title}>
+      {student.first_name}{' '}
+      {student.last_name}
+    </Text>
+  </View>
+
+  <Pressable
+    onPress={() =>
+      router.push({
+        pathname:
+          '/classes/[id]/students/[studentId]/edit',
+        params: {
+          id,
+          studentId,
+        },
+      })
+    }
+  >
+    <Text style={styles.editStudentText}>
+      Rediger
+    </Text>
+  </Pressable>
+</View>
 
       <View style={styles.infoCard}>
         <InfoRow
@@ -306,53 +356,54 @@ export default function StudentScreen() {
                     </Text>
                   )}
 
-                  <View
-                    style={
-                      styles.actionRow
-                    }
-                  >
-                    {guardian.phone && (
-                      <Pressable
-                        onPress={() =>
-                          callPhone(
-                            guardian.phone!
-                          )
-                        }
-                        style={
-                          styles.primaryButton
-                        }
-                      >
-                        <Text
-                          style={
-                            styles.primaryButtonText
-                          }
-                        >
-                          Ring
-                        </Text>
-                      </Pressable>
-                    )}
+                <View style={styles.actionRow}>
+  {guardian.phone && (
+    <Pressable
+      onPress={() =>
+        callPhone(guardian.phone!)
+      }
+      style={styles.primaryButton}
+    >
+      <Text
+        style={styles.primaryButtonText}
+      >
+        Ring
+      </Text>
+    </Pressable>
+  )}
 
-                    {guardian.email && (
-                      <Pressable
-                        onPress={() =>
-                          sendEmail(
-                            guardian.email!
-                          )
-                        }
-                        style={
-                          styles.secondaryButton
-                        }
-                      >
-                        <Text
-                          style={
-                            styles.secondaryButtonText
-                          }
-                        >
-                          Mail
-                        </Text>
-                      </Pressable>
-                    )}
-                  </View>
+  {guardian.phone && (
+    <Pressable
+      onPress={() =>
+        openWhatsApp(guardian.phone!)
+      }
+      style={styles.whatsappButton}
+    >
+      <Text
+        style={styles.whatsappButtonText}
+      >
+        WhatsApp
+      </Text>
+    </Pressable>
+  )}
+
+  {guardian.email && (
+    <Pressable
+      onPress={() =>
+        sendEmail(guardian.email!)
+      }
+      style={styles.secondaryButton}
+    >
+      <Text
+        style={
+          styles.secondaryButtonText
+        }
+      >
+        Mail
+      </Text>
+    </Pressable>
+  )}
+</View>
                 </View>
               );
             }
@@ -417,7 +468,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
     marginTop: 4,
-    marginBottom: 24,
   },
 
   infoCard: {
@@ -558,4 +608,36 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 6,
   },
+
+  whatsappButton: {
+  flex: 1,
+  height: 48,
+  borderRadius: 14,
+  backgroundColor: '#25D366',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+whatsappButtonText: {
+  color: '#FFFFFF',
+  fontWeight: '700',
+},
+
+studentHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'flex-start',
+  marginBottom: 24,
+},
+
+studentHeaderText: {
+  flex: 1,
+},
+
+editStudentText: {
+  fontSize: 14,
+  fontWeight: '700',
+  color: '#4F46E5',
+  marginTop: 8,
+},
 });

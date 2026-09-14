@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import BackButton from '@/app/components/BackButton';
 import {
   Alert,
   Pressable,
@@ -461,6 +462,9 @@ export default function AttendanceScreen() {
         styles.content
       }
     >
+
+        <BackButton/>
+        
       <View style={styles.header}>
         <Text style={styles.eyebrow}>
           Dagens protokol
