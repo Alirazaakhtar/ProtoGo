@@ -1,41 +1,105 @@
 import { useState } from 'react';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+
 import {
+  ActivityIndicator,
   Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 
-import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
+const COLORS = {
+  navy: '#1E3A5F',
+  navyDark: '#16324F',
+  navySoft: '#EAF0F6',
+
+  text: '#111827',
+  muted: '#6B7280',
+  lightMuted: '#9CA3AF',
+
+  white: '#FFFFFF',
+};
+
 export default function SignupScreen() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [
+    firstName,
+    setFirstName,
+  ] = useState('');
+
+  const [
+    lastName,
+    setLastName,
+  ] = useState('');
+
+  const [email, setEmail] =
+    useState('');
+
+  const [password, setPassword] =
+    useState('');
+
+  const [loading, setLoading] =
+    useState(false);
 
   async function signup() {
-    if (!name || !email || !password) {
-      Alert.alert('Udfyld alle felter');
+    const cleanedFirstName =
+      firstName.trim();
+
+    const cleanedLastName =
+      lastName.trim();
+
+    const cleanedEmail =
+      email
+        .trim()
+        .toLowerCase();
+
+    if (
+      !cleanedFirstName ||
+      !cleanedLastName ||
+      !cleanedEmail ||
+      !password
+    ) {
+      Alert.alert(
+        'Manglende oplysninger',
+        'Udfyld alle felter.'
+      );
+
       return;
     }
+
+    const fullName =
+      `${cleanedFirstName} ${cleanedLastName}`;
 
     try {
       setLoading(true);
 
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
+      const { error } =
+        await supabase.auth.signUp({
+          email: cleanedEmail,
+          password,
 
-        options: {
-          data: {
-            full_name: name,
+          options: {
+            data: {
+              first_name:
+                cleanedFirstName,
+
+              last_name:
+                cleanedLastName,
+
+              full_name:
+                fullName,
+            },
           },
-        },
-      });
+        });
 
       if (error) {
         Alert.alert(
@@ -58,117 +122,593 @@ export default function SignupScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
-        Opret lærerprofil
-      </Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : 'height'
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          styles.content
+        }
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={
+          Platform.OS === 'ios'
+            ? 'interactive'
+            : 'on-drag'
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
+      >
+        {/* HEADER */}
 
-      <Text style={styles.subtitle}>
-        Kom i gang med Protokol
-      </Text>
-
-      <View style={styles.form}>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Dit navn"
-          style={styles.input}
-        />
-
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="E-mail"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-        />
-
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Adgangskode"
-          secureTextEntry
-          style={styles.input}
-        />
-
-        <Pressable
-          onPress={signup}
-          disabled={loading}
-          style={styles.button}
+        <View
+          style={
+            styles.header
+          }
         >
-          <Text style={styles.buttonText}>
-            {loading
-              ? 'Opretter...'
-              : 'Opret konto'}
-          </Text>
-        </Pressable>
+          <Image
+            source={require('../assets/images/protogo-logo.png')}
+            style={
+              styles.logo
+            }
+            resizeMode="contain"
+          />
 
-        <Pressable
-          onPress={() => router.back()}
-        >
-          <Text style={styles.login}>
-            Har du allerede en konto? Log ind
+          <Text
+            style={
+              styles.title
+            }
+          >
+            Opret lærerprofil
           </Text>
-        </Pressable>
-      </View>
-    </View>
+
+          <Text
+            style={
+              styles.subtitle
+            }
+          >
+            Opret din konto og kom i
+            gang med ProtoGo.
+          </Text>
+        </View>
+
+        {/* FORM */}
+
+        <View
+          style={
+            styles.form
+          }
+        >
+          {/* FORNAVN */}
+
+          <View
+            style={
+              styles.field
+            }
+          >
+            <View
+              style={
+                styles.labelRow
+              }
+            >
+              <View
+                style={
+                  styles.labelIcon
+                }
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={15}
+                  color={
+                    COLORS.navy
+                  }
+                />
+              </View>
+
+              <Text
+                style={
+                  styles.label
+                }
+              >
+                Fornavn
+              </Text>
+            </View>
+
+            <TextInput
+              value={
+                firstName
+              }
+              onChangeText={
+                setFirstName
+              }
+              placeholder="Dit fornavn"
+              placeholderTextColor={
+                COLORS.lightMuted
+              }
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="next"
+              style={
+                styles.input
+              }
+            />
+          </View>
+
+          {/* EFTERNAVN */}
+
+          <View
+            style={
+              styles.field
+            }
+          >
+            <View
+              style={
+                styles.labelRow
+              }
+            >
+              <View
+                style={
+                  styles.labelIcon
+                }
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={15}
+                  color={
+                    COLORS.navy
+                  }
+                />
+              </View>
+
+              <Text
+                style={
+                  styles.label
+                }
+              >
+                Efternavn
+              </Text>
+            </View>
+
+            <TextInput
+              value={
+                lastName
+              }
+              onChangeText={
+                setLastName
+              }
+              placeholder="Dit efternavn"
+              placeholderTextColor={
+                COLORS.lightMuted
+              }
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="next"
+              style={
+                styles.input
+              }
+            />
+          </View>
+
+          {/* EMAIL */}
+
+          <View
+            style={
+              styles.field
+            }
+          >
+            <View
+              style={
+                styles.labelRow
+              }
+            >
+              <View
+                style={
+                  styles.labelIcon
+                }
+              >
+                <Ionicons
+                  name="mail-outline"
+                  size={15}
+                  color={
+                    COLORS.navy
+                  }
+                />
+              </View>
+
+              <Text
+                style={
+                  styles.label
+                }
+              >
+                E-mail
+              </Text>
+            </View>
+
+            <TextInput
+              value={
+                email
+              }
+              onChangeText={
+                setEmail
+              }
+              placeholder="laerer@skole.dk"
+              placeholderTextColor={
+                COLORS.lightMuted
+              }
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              returnKeyType="next"
+              style={
+                styles.input
+              }
+            />
+          </View>
+
+          {/* ADGANGSKODE */}
+
+          <View
+            style={
+              styles.field
+            }
+          >
+            <View
+              style={
+                styles.labelRow
+              }
+            >
+              <View
+                style={
+                  styles.labelIcon
+                }
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={15}
+                  color={
+                    COLORS.navy
+                  }
+                />
+              </View>
+
+              <Text
+                style={
+                  styles.label
+                }
+              >
+                Adgangskode
+              </Text>
+            </View>
+
+            <TextInput
+              value={
+                password
+              }
+              onChangeText={
+                setPassword
+              }
+              placeholder="Vælg en adgangskode"
+              placeholderTextColor={
+                COLORS.lightMuted
+              }
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              style={
+                styles.input
+              }
+            />
+          </View>
+
+          {/* OPRET */}
+
+          <Pressable
+            onPress={
+              signup
+            }
+            disabled={
+              loading
+            }
+            style={({
+              pressed,
+            }) => [
+              styles.button,
+
+              pressed &&
+                styles.buttonPressed,
+
+              loading &&
+                styles.disabled,
+            ]}
+          >
+            {loading ? (
+              <ActivityIndicator
+                size="small"
+                color={
+                  COLORS.white
+                }
+              />
+            ) : (
+              <Text
+                style={
+                  styles.buttonText
+                }
+              >
+                Opret konto
+              </Text>
+            )}
+          </Pressable>
+
+          {/* LOGIN */}
+
+          <Pressable
+            onPress={() =>
+              router.replace(
+                '/login'
+              )
+            }
+            style={({
+              pressed,
+            }) => [
+              styles.loginButton,
+
+              pressed &&
+                styles.textPressed,
+            ]}
+          >
+            <Text
+              style={
+                styles.loginMuted
+              }
+            >
+              Har du allerede en konto?{' '}
+            </Text>
+
+            <Text
+              style={
+                styles.loginText
+              }
+            >
+              Log ind
+            </Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#F5F6F8',
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
 
-  title: {
-    fontSize: 34,
-    fontWeight: '700',
-    color: '#111827',
-  },
+      backgroundColor:
+        COLORS.white,
+    },
 
-  subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginTop: 8,
-    marginBottom: 36,
-  },
+    content: {
+      flexGrow: 1,
 
-  form: {
-    gap: 14,
-  },
+      paddingHorizontal: 24,
+      paddingTop: 70,
+      paddingBottom: 40,
 
-  input: {
-    height: 56,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 18,
-    fontSize: 16,
-  },
+      justifyContent:
+        'center',
+    },
 
-  button: {
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: '#111827',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    /* HEADER */
 
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 16,
-  },
+    header: {
+      alignItems:
+        'center',
 
-  login: {
-    textAlign: 'center',
-    marginTop: 10,
-    color: '#4F46E5',
-    fontWeight: '600',
-  },
-});
+      marginBottom: 32,
+    },
+
+    logo: {
+      width: 185,
+      height: 120,
+
+      marginBottom: 16,
+    },
+
+    title: {
+      fontSize: 32,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
+
+      textAlign:
+        'center',
+    },
+
+    subtitle: {
+      fontSize: 15,
+
+      color:
+        COLORS.muted,
+
+      marginTop: 9,
+
+      lineHeight: 22,
+
+      textAlign:
+        'center',
+
+      paddingHorizontal: 16,
+    },
+
+    /* FORM */
+
+    form: {
+      gap: 14,
+    },
+
+    field: {
+      gap: 8,
+    },
+
+    labelRow: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 7,
+    },
+
+    labelIcon: {
+      width: 26,
+      height: 26,
+
+      borderRadius: 8,
+
+      backgroundColor:
+        COLORS.navySoft,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    label: {
+      fontSize: 14,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.navy,
+    },
+
+    input: {
+      height: 56,
+
+      borderRadius: 16,
+
+      backgroundColor:
+        COLORS.white,
+
+      borderWidth: 1,
+
+      borderColor:
+        '#E5E7EB',
+
+      paddingHorizontal: 18,
+
+      fontSize: 16,
+
+      color:
+        COLORS.text,
+    },
+
+    /* BUTTON */
+
+    button: {
+      height: 58,
+
+      borderRadius: 16,
+
+      backgroundColor:
+        COLORS.navy,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      marginTop: 8,
+
+      shadowColor:
+        COLORS.navyDark,
+
+      shadowOffset: {
+        width: 0,
+        height: 5,
+      },
+
+      shadowOpacity: 0.13,
+
+      shadowRadius: 12,
+
+      elevation: 2,
+    },
+
+    buttonPressed: {
+      backgroundColor:
+        COLORS.navyDark,
+
+      transform: [
+        {
+          scale: 0.99,
+        },
+      ],
+    },
+
+    buttonText: {
+      color:
+        COLORS.white,
+
+      fontSize: 16,
+
+      fontWeight:
+        '700',
+    },
+
+    disabled: {
+      opacity: 0.5,
+    },
+
+    /* LOGIN LINK */
+
+    loginButton: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      paddingVertical: 12,
+
+      marginTop: 2,
+    },
+
+    loginMuted: {
+      fontSize: 14,
+
+      color:
+        COLORS.muted,
+    },
+
+    loginText: {
+      fontSize: 14,
+
+      color:
+        COLORS.navy,
+
+      fontWeight:
+        '700',
+    },
+
+    textPressed: {
+      opacity: 0.6,
+    },
+  });

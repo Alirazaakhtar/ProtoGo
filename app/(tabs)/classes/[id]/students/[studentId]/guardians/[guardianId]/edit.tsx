@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -33,7 +35,8 @@ const COLORS = {
 };
 
 type GuardianEditData = {
-  name: string;
+  firstName: string;
+  lastName: string;
   relationship: string;
   phone: string;
   email: string;
@@ -61,10 +64,19 @@ export default function EditGuardianScreen() {
     ? guardianEditCache.get(cacheKey)
     : undefined;
 
-  const [name, setName] =
-    useState(
-      cachedGuardian?.name ?? ''
-    );
+  const [
+    firstName,
+    setFirstName,
+  ] = useState(
+    cachedGuardian?.firstName ?? ''
+  );
+
+  const [
+    lastName,
+    setLastName,
+  ] = useState(
+    cachedGuardian?.lastName ?? ''
+  );
 
   const [
     relationship,
@@ -91,7 +103,10 @@ export default function EditGuardianScreen() {
 
   useEffect(() => {
     loadGuardian();
-  }, [guardianId, studentId]);
+  }, [
+    guardianId,
+    studentId,
+  ]);
 
   async function loadGuardian() {
     if (
@@ -114,7 +129,10 @@ export default function EditGuardianScreen() {
           phone,
           email
         `)
-        .eq('id', guardianId)
+        .eq(
+          'id',
+          guardianId
+        )
         .single();
 
       if (guardianError) {
@@ -125,7 +143,9 @@ export default function EditGuardianScreen() {
         data: relation,
         error: relationError,
       } = await supabase
-        .from('student_guardians')
+        .from(
+          'student_guardians'
+        )
         .select(`
           relationship
         `)
@@ -143,10 +163,22 @@ export default function EditGuardianScreen() {
         throw relationError;
       }
 
+      const {
+        firstName:
+          parsedFirstName,
+        lastName:
+          parsedLastName,
+      } = splitFullName(
+        guardian.full_name ?? ''
+      );
+
       const freshData:
         GuardianEditData = {
-          name:
-            guardian.full_name ?? '',
+          firstName:
+            parsedFirstName,
+
+          lastName:
+            parsedLastName,
 
           relationship:
             relation.relationship ?? '',
@@ -163,8 +195,12 @@ export default function EditGuardianScreen() {
         freshData
       );
 
-      setName(
-        freshData.name
+      setFirstName(
+        freshData.firstName
+      );
+
+      setLastName(
+        freshData.lastName
       );
 
       setRelationship(
@@ -205,20 +241,29 @@ export default function EditGuardianScreen() {
       return;
     }
 
-    if (!name.trim()) {
+    const cleanedFirstName =
+      firstName.trim();
+
+    const cleanedLastName =
+      lastName.trim();
+
+    if (
+      !cleanedFirstName ||
+      !cleanedLastName
+    ) {
       Alert.alert(
         'Navn mangler',
-        'Skriv forælderens navn.'
+        'Skriv både fornavn og efternavn.'
       );
 
       return;
     }
 
+    const fullName =
+      `${cleanedFirstName} ${cleanedLastName}`;
+
     try {
       setSaving(true);
-
-      const cleanedName =
-        name.trim();
 
       const cleanedPhone =
         phone.trim();
@@ -237,13 +282,15 @@ export default function EditGuardianScreen() {
         .from('guardians')
         .update({
           full_name:
-            cleanedName,
+            fullName,
 
           phone:
-            cleanedPhone || null,
+            cleanedPhone ||
+            null,
 
           email:
-            cleanedEmail || null,
+            cleanedEmail ||
+            null,
         })
         .eq(
           'id',
@@ -262,7 +309,9 @@ export default function EditGuardianScreen() {
       const {
         error: relationError,
       } = await supabase
-        .from('student_guardians')
+        .from(
+          'student_guardians'
+        )
         .update({
           relationship:
             cleanedRelationship ||
@@ -289,11 +338,20 @@ export default function EditGuardianScreen() {
       guardianEditCache.set(
         cacheKey,
         {
-          name: cleanedName,
+          firstName:
+            cleanedFirstName,
+
+          lastName:
+            cleanedLastName,
+
           relationship:
             cleanedRelationship,
-          phone: cleanedPhone,
-          email: cleanedEmail,
+
+          phone:
+            cleanedPhone,
+
+          email:
+            cleanedEmail,
         }
       );
 
@@ -311,9 +369,13 @@ export default function EditGuardianScreen() {
       return;
     }
 
+    const fullName =
+      `${firstName.trim()} ${lastName.trim()}`
+        .trim();
+
     Alert.alert(
       'Fjern forælder',
-      `Vil du fjerne ${name} fra eleven?`,
+      `Vil du fjerne ${fullName} fra eleven?`,
       [
         {
           text: 'Annuller',
@@ -363,233 +425,460 @@ export default function EditGuardianScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View
+        style={
+          styles.center
+        }
+      >
         <ActivityIndicator
           size="small"
-          color={COLORS.navy}
+          color={
+            COLORS.navy
+          }
         />
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={
-        styles.content
+    <KeyboardAvoidingView
+      style={
+        styles.container
       }
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={
-        false
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : 'height'
       }
     >
-      <BackButton />
-
-      <Text style={styles.eyebrow}>
-        Kontaktperson
-      </Text>
-
-      <Text style={styles.title}>
-        Rediger forælder
-      </Text>
-
-      {/* NAVN */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="person-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          Navn
-        </Text>
-      </View>
-
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="Navn"
-        placeholderTextColor={
-          COLORS.lightMuted
+      <ScrollView
+        contentContainerStyle={
+          styles.content
         }
-        autoCapitalize="words"
-        style={styles.input}
-      />
-
-      {/* RELATION */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="people-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          Relation
-        </Text>
-      </View>
-
-      <TextInput
-        value={relationship}
-        onChangeText={
-          setRelationship
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={
+          Platform.OS === 'ios'
+            ? 'interactive'
+            : 'on-drag'
         }
-        placeholder="Fx Mor, Far eller Værge"
-        placeholderTextColor={
-          COLORS.lightMuted
+        showsVerticalScrollIndicator={
+          false
         }
-        autoCapitalize="words"
-        style={styles.input}
-      />
-
-      {/* TELEFON */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="call-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          Telefon
-        </Text>
-      </View>
-
-      <TextInput
-        value={phone}
-        onChangeText={setPhone}
-        placeholder="+45 12 34 56 78"
-        placeholderTextColor={
-          COLORS.lightMuted
-        }
-        keyboardType="phone-pad"
-        style={styles.input}
-      />
-
-      {/* E-MAIL */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="mail-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          E-mail
-        </Text>
-      </View>
-
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="navn@example.dk"
-        placeholderTextColor={
-          COLORS.lightMuted
-        }
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-        style={styles.input}
-      />
-
-      {/* GEM */}
-
-      <Pressable
-        onPress={saveGuardian}
-        disabled={saving}
-        style={({ pressed }) => [
-          styles.saveButton,
-
-          pressed &&
-            styles.saveButtonPressed,
-
-          saving &&
-            styles.disabled,
-        ]}
       >
-        {saving ? (
-          <ActivityIndicator
-            size="small"
-            color={COLORS.white}
-          />
-        ) : (
-          <View
-            style={
-              styles.buttonContent
-            }
-          >
-            <Ionicons
-              name="checkmark-circle-outline"
-              size={20}
-              color={COLORS.white}
-            />
-
-            <Text
-              style={
-                styles.saveButtonText
-              }
-            >
-              Gem ændringer
-            </Text>
-          </View>
-        )}
-      </Pressable>
-
-      {/* FJERN */}
-
-      <Pressable
-        onPress={removeGuardian}
-        disabled={saving}
-        style={({ pressed }) => [
-          styles.removeButton,
-
-          pressed &&
-            styles.pressed,
-
-          saving &&
-            styles.disabled,
-        ]}
-      >
-        <Ionicons
-          name="person-remove-outline"
-          size={18}
-          color="#DC2626"
-        />
+        <BackButton />
 
         <Text
           style={
-            styles.removeButtonText
+            styles.eyebrow
           }
         >
-          Fjern fra elev
+          Kontaktperson
         </Text>
-      </Pressable>
-    </ScrollView>
+
+        <Text
+          style={
+            styles.title
+          }
+        >
+          Rediger forælder
+        </Text>
+
+        {/* FORNAVN */}
+
+        <View
+          style={
+            styles.labelRow
+          }
+        >
+          <View
+            style={
+              styles.labelIcon
+            }
+          >
+            <Ionicons
+              name="person-outline"
+              size={15}
+              color={
+                COLORS.navy
+              }
+            />
+          </View>
+
+          <Text
+            style={
+              styles.label
+            }
+          >
+            Fornavn
+          </Text>
+        </View>
+
+        <TextInput
+          value={
+            firstName
+          }
+          onChangeText={
+            setFirstName
+          }
+          placeholder="Fx Anne"
+          placeholderTextColor={
+            COLORS.lightMuted
+          }
+          autoCapitalize="words"
+          autoCorrect={false}
+          returnKeyType="next"
+          style={
+            styles.input
+          }
+        />
+
+        {/* EFTERNAVN */}
+
+        <View
+          style={
+            styles.labelRow
+          }
+        >
+          <View
+            style={
+              styles.labelIcon
+            }
+          >
+            <Ionicons
+              name="person-outline"
+              size={15}
+              color={
+                COLORS.navy
+              }
+            />
+          </View>
+
+          <Text
+            style={
+              styles.label
+            }
+          >
+            Efternavn
+          </Text>
+        </View>
+
+        <TextInput
+          value={
+            lastName
+          }
+          onChangeText={
+            setLastName
+          }
+          placeholder="Fx Jensen"
+          placeholderTextColor={
+            COLORS.lightMuted
+          }
+          autoCapitalize="words"
+          autoCorrect={false}
+          returnKeyType="next"
+          style={
+            styles.input
+          }
+        />
+
+        {/* RELATION */}
+
+        <View
+          style={
+            styles.labelRow
+          }
+        >
+          <View
+            style={
+              styles.labelIcon
+            }
+          >
+            <Ionicons
+              name="people-outline"
+              size={15}
+              color={
+                COLORS.navy
+              }
+            />
+          </View>
+
+          <Text
+            style={
+              styles.label
+            }
+          >
+            Relation
+          </Text>
+        </View>
+
+        <TextInput
+          value={
+            relationship
+          }
+          onChangeText={
+            setRelationship
+          }
+          placeholder="Fx Mor, Far eller Værge"
+          placeholderTextColor={
+            COLORS.lightMuted
+          }
+          autoCapitalize="words"
+          autoCorrect={false}
+          returnKeyType="next"
+          style={
+            styles.input
+          }
+        />
+
+        {/* TELEFON */}
+
+        <View
+          style={
+            styles.labelRow
+          }
+        >
+          <View
+            style={
+              styles.labelIcon
+            }
+          >
+            <Ionicons
+              name="call-outline"
+              size={15}
+              color={
+                COLORS.navy
+              }
+            />
+          </View>
+
+          <Text
+            style={
+              styles.label
+            }
+          >
+            Telefon
+          </Text>
+        </View>
+
+        <TextInput
+          value={
+            phone
+          }
+          onChangeText={
+            setPhone
+          }
+          placeholder="+45 12 34 56 78"
+          placeholderTextColor={
+            COLORS.lightMuted
+          }
+          keyboardType="phone-pad"
+          returnKeyType="next"
+          style={
+            styles.input
+          }
+        />
+
+        {/* E-MAIL */}
+
+        <View
+          style={
+            styles.labelRow
+          }
+        >
+          <View
+            style={
+              styles.labelIcon
+            }
+          >
+            <Ionicons
+              name="mail-outline"
+              size={15}
+              color={
+                COLORS.navy
+              }
+            />
+          </View>
+
+          <Text
+            style={
+              styles.label
+            }
+          >
+            E-mail
+          </Text>
+        </View>
+
+        <TextInput
+          value={
+            email
+          }
+          onChangeText={
+            setEmail
+          }
+          placeholder="navn@example.dk"
+          placeholderTextColor={
+            COLORS.lightMuted
+          }
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="done"
+          style={
+            styles.input
+          }
+        />
+
+        {/* GEM */}
+
+        <Pressable
+          onPress={
+            saveGuardian
+          }
+          disabled={
+            saving
+          }
+          style={({
+            pressed,
+          }) => [
+            styles.saveButton,
+
+            pressed &&
+              styles.saveButtonPressed,
+
+            saving &&
+              styles.disabled,
+          ]}
+        >
+          {saving ? (
+            <ActivityIndicator
+              size="small"
+              color={
+                COLORS.white
+              }
+            />
+          ) : (
+            <View
+              style={
+                styles.buttonContent
+              }
+            >
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={20}
+                color={
+                  COLORS.white
+                }
+              />
+
+              <Text
+                style={
+                  styles.saveButtonText
+                }
+              >
+                Gem ændringer
+              </Text>
+            </View>
+          )}
+        </Pressable>
+
+        {/* FJERN */}
+
+        <Pressable
+          onPress={
+            removeGuardian
+          }
+          disabled={
+            saving
+          }
+          style={({
+            pressed,
+          }) => [
+            styles.removeButton,
+
+            pressed &&
+              styles.pressed,
+
+            saving &&
+              styles.disabled,
+          ]}
+        >
+          <Ionicons
+            name="person-remove-outline"
+            size={18}
+            color="#DC2626"
+          />
+
+          <Text
+            style={
+              styles.removeButtonText
+            }
+          >
+            Fjern fra elev
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
+}
+
+function splitFullName(
+  fullName: string
+) {
+  const parts =
+    fullName
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+  if (
+    parts.length === 0
+  ) {
+    return {
+      firstName: '',
+      lastName: '',
+    };
+  }
+
+  if (
+    parts.length === 1
+  ) {
+    return {
+      firstName:
+        parts[0],
+
+      lastName:
+        '',
+    };
+  }
+
+  return {
+    firstName:
+      parts
+        .slice(
+          0,
+          -1
+        )
+        .join(' '),
+
+    lastName:
+      parts[
+        parts.length - 1
+      ],
+  };
 }
 
 const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+
       backgroundColor:
         COLORS.white,
     },
 
     content: {
+      flexGrow: 1,
+
       padding: 20,
       paddingTop: 70,
       paddingBottom: 50,
@@ -597,67 +886,94 @@ const styles =
 
     center: {
       flex: 1,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
+
       backgroundColor:
         COLORS.white,
     },
 
     eyebrow: {
       fontSize: 14,
-      color: COLORS.muted,
+
+      color:
+        COLORS.muted,
     },
 
     title: {
       fontSize: 34,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
+
       marginTop: 4,
       marginBottom: 28,
     },
 
     labelRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 7,
+
       marginBottom: 7,
     },
 
     labelIcon: {
       width: 26,
       height: 26,
+
       borderRadius: 8,
 
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
     },
 
     label: {
       fontSize: 13,
-      fontWeight: '600',
-      color: COLORS.navy,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.navy,
     },
 
     input: {
+      height: 56,
+
       backgroundColor:
         COLORS.white,
 
-      height: 54,
-      borderRadius: 15,
+      borderRadius: 16,
 
-      paddingHorizontal: 16,
+      paddingHorizontal: 18,
 
       fontSize: 16,
+
       marginBottom: 18,
 
-      color: COLORS.text,
+      color:
+        COLORS.text,
 
       borderWidth: 1,
+
       borderColor:
         '#E5E7EB',
     },
@@ -670,7 +986,9 @@ const styles =
       backgroundColor:
         COLORS.navy,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -685,6 +1003,7 @@ const styles =
       },
 
       shadowOpacity: 0.13,
+
       shadowRadius: 12,
 
       elevation: 2,
@@ -702,25 +1021,39 @@ const styles =
     },
 
     buttonContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
+
       gap: 8,
     },
 
     saveButtonText: {
-      color: COLORS.white,
+      color:
+        COLORS.white,
+
       fontSize: 16,
-      fontWeight: '700',
+
+      fontWeight:
+        '700',
     },
 
     removeButton: {
       marginTop: 18,
+
       minHeight: 48,
 
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -729,8 +1062,12 @@ const styles =
 
     removeButtonText: {
       fontSize: 15,
-      fontWeight: '600',
-      color: '#DC2626',
+
+      fontWeight:
+        '600',
+
+      color:
+        '#DC2626',
     },
 
     pressed: {

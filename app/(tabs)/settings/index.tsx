@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 import { supabase } from '@/lib/supabase';
 
@@ -64,24 +65,46 @@ export default function SettingsScreen() {
       contentContainerStyle={
         styles.content
       }
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={
+        false
+      }
     >
-      <Text style={styles.title}>
+      <Text
+        style={
+          styles.title
+        }
+      >
         Indstillinger
       </Text>
 
       {/* INDSTILLINGER */}
 
-      <View style={styles.sectionShadow}>
-        <View style={styles.section}>
+      <View
+        style={
+          styles.sectionShadow
+        }
+      >
+        <View
+          style={
+            styles.section
+          }
+        >
           <SettingRow
             icon="person-outline"
             title="Profil"
-            subtitle="Navn og konto"
-            onPress={() => {}}
+            subtitle="Navn, e-mail og konto"
+            onPress={() =>
+              router.push(
+                '/settings/profile'
+              )
+            }
           />
 
-          <View style={styles.divider} />
+          <View
+            style={
+              styles.divider
+            }
+          />
 
           <SettingRow
             icon="notifications-outline"
@@ -90,7 +113,11 @@ export default function SettingsScreen() {
             onPress={() => {}}
           />
 
-          <View style={styles.divider} />
+          <View
+            style={
+              styles.divider
+            }
+          />
 
           <SettingRow
             icon="options-outline"
@@ -101,22 +128,31 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <View style={styles.spacer} />
+      <View
+        style={
+          styles.spacer
+        }
+      />
 
       {/* LOG UD */}
 
       <Pressable
-        onPress={handleLogout}
-        style={({ pressed }) => [
+        onPress={
+          handleLogout
+        }
+        style={({
+          pressed,
+        }) => [
           styles.logoutButton,
 
           pressed &&
             styles.logoutButtonPressed,
         ]}
       >
-
         <Text
-          style={styles.logoutText}
+          style={
+            styles.logoutText
+          }
         >
           Log ud
         </Text>
@@ -144,25 +180,43 @@ function SettingRow({
 }: SettingRowProps) {
   return (
     <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
+      onPress={
+        onPress
+      }
+      style={({
+        pressed,
+      }) => [
         styles.row,
 
         pressed &&
           styles.rowPressed,
       ]}
     >
-      <View style={styles.iconBox}>
+      <View
+        style={
+          styles.iconBox
+        }
+      >
         <Ionicons
-          name={icon}
+          name={
+            icon
+          }
           size={20}
-          color={COLORS.navy}
+          color={
+            COLORS.navy
+          }
         />
       </View>
 
-      <View style={styles.rowText}>
+      <View
+        style={
+          styles.rowText
+        }
+      >
         <Text
-          style={styles.rowTitle}
+          style={
+            styles.rowTitle
+          }
         >
           {title}
         </Text>
@@ -177,12 +231,16 @@ function SettingRow({
       </View>
 
       <View
-        style={styles.chevronBox}
+        style={
+          styles.chevronBox
+        }
       >
         <Ionicons
           name="chevron-forward"
           size={18}
-          color={COLORS.navy}
+          color={
+            COLORS.navy
+          }
         />
       </View>
     </Pressable>
@@ -193,6 +251,7 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+
       backgroundColor:
         COLORS.white,
     },
@@ -207,8 +266,12 @@ const styles =
 
     title: {
       fontSize: 34,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
 
       marginTop: 4,
       marginBottom: 28,
@@ -219,7 +282,8 @@ const styles =
     sectionShadow: {
       borderRadius: 20,
 
-      shadowColor: '#000000',
+      shadowColor:
+        '#000000',
 
       shadowOffset: {
         width: 0,
@@ -227,6 +291,7 @@ const styles =
       },
 
       shadowOpacity: 0.06,
+
       shadowRadius: 14,
 
       elevation: 2,
@@ -238,14 +303,18 @@ const styles =
 
       borderRadius: 20,
 
-      overflow: 'hidden',
+      overflow:
+        'hidden',
     },
 
     row: {
       minHeight: 76,
 
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
 
       paddingHorizontal: 16,
     },
@@ -264,25 +333,35 @@ const styles =
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
     },
 
     rowText: {
       flex: 1,
+
       marginLeft: 14,
     },
 
     rowTitle: {
       fontSize: 16,
-      fontWeight: '600',
-      color: COLORS.text,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.text,
     },
 
     rowSubtitle: {
       fontSize: 13,
+
       color:
         COLORS.lightMuted,
+
       marginTop: 3,
     },
 
@@ -295,8 +374,11 @@ const styles =
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
     },
 
     divider: {
@@ -310,6 +392,7 @@ const styles =
 
     spacer: {
       flex: 1,
+
       minHeight: 48,
     },
 
@@ -324,12 +407,18 @@ const styles =
         COLORS.dangerSoft,
 
       borderWidth: 1,
+
       borderColor:
         COLORS.dangerBorder,
 
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
 
       gap: 10,
 
@@ -342,6 +431,7 @@ const styles =
       },
 
       shadowOpacity: 0.08,
+
       shadowRadius: 10,
 
       elevation: 2,
@@ -360,7 +450,11 @@ const styles =
 
     logoutText: {
       fontSize: 15,
-      fontWeight: '700',
-      color: COLORS.danger,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.danger,
     },
   });

@@ -1,4 +1,9 @@
-import { useCallback, useState } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
+
 import { Ionicons } from '@expo/vector-icons';
 
 import {
@@ -30,11 +35,16 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
+type SortOption =
+  | 'newest'
+  | 'oldest';
+
 type SchoolClass = {
   id: string;
   name: string;
   school_year: string | null;
   subject: string | null;
+  created_at: string;
 };
 
 type AttendanceStatus =
@@ -61,6 +71,24 @@ type HomeCache = {
   attendancePercentages: AttendancePercentages;
 };
 
+const SORT_OPTIONS: {
+  key: SortOption;
+  label: string;
+  icon:
+    keyof typeof Ionicons.glyphMap;
+}[] = [
+  {
+    key: 'newest',
+    label: 'Nyeste',
+    icon: 'arrow-down-outline',
+  },
+  {
+    key: 'oldest',
+    label: 'Ældste',
+    icon: 'arrow-up-outline',
+  },
+];
+
 let homeCache: HomeCache | null = null;
 
 export default function HomeScreen() {
@@ -82,167 +110,200 @@ export default function HomeScreen() {
       homeCache?.attendancePercentages ?? {}
     );
 
+  const [
+    sortOption,
+    setSortOption,
+  ] = useState<SortOption>(
+    'newest'
+  );
+
   const [loading, setLoading] =
     useState(homeCache === null);
 
-  const loadHome = useCallback(async () => {
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+  const loadHome =
+    useCallback(async () => {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    if (userError || !user) {
-      console.error(
-        'Kunne ikke hente bruger:',
-        userError
-      );
-
-      setLoading(false);
-      return;
-    }
-
-    const [
-      profileResult,
-      classesResult,
-      attendanceResult,
-    ] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single(),
-
-      supabase
-        .from('classes')
-        .select(`
-          id,
-          name,
-          school_year,
-          subject
-        `)
-        .order('name'),
-
-      supabase
-        .from('attendance_sessions')
-        .select(`
-          class_id,
-
-          attendance_records (
-            status
-          )
-        `)
-        .not(
-          'finalized_at',
-          'is',
-          null
-        ),
-    ]);
-
-    if (profileResult.error) {
-      console.error(
-        'Fejl ved hentning af profil:',
-        profileResult.error
-      );
-    }
-
-    if (classesResult.error) {
-      console.error(
-        'Fejl ved hentning af klasser:',
-        classesResult.error
-      );
-
-      setLoading(false);
-      return;
-    }
-
-    if (attendanceResult.error) {
-      console.error(
-        'Fejl ved hentning af fremmøde:',
-        attendanceResult.error
-      );
-    }
-
-    const newClasses =
-      (classesResult.data ??
-        []) as SchoolClass[];
-
-    const newFullName =
-      profileResult.data?.full_name ?? '';
-
-    const attendanceSessions =
-      attendanceResult.error
-        ? []
-        : ((attendanceResult.data ??
-            []) as AttendanceSessionSummary[]);
-
-    const newAttendancePercentages:
-      AttendancePercentages = {};
-
-    for (
-      const schoolClass of newClasses
-    ) {
-      const classSessions =
-        attendanceSessions.filter(
-          (session) =>
-            session.class_id ===
-            schoolClass.id
+      if (
+        userError ||
+        !user
+      ) {
+        console.error(
+          'Kunne ikke hente bruger:',
+          userError
         );
 
-      let totalRegistrations = 0;
-      let totalAttendance = 0;
-
-      for (
-        const session of classSessions
-      ) {
-        for (
-          const record of
-          session.attendance_records ??
-          []
-        ) {
-          totalRegistrations += 1;
-
-          if (
-            record.status === 'present' ||
-            record.status === 'late'
-          ) {
-            totalAttendance += 1;
-          }
-        }
+        setLoading(false);
+        return;
       }
 
-      newAttendancePercentages[
-        schoolClass.id
-      ] =
-        totalRegistrations > 0
-          ? Math.round(
-              (totalAttendance /
-                totalRegistrations) *
-                100
+      const [
+        profileResult,
+        classesResult,
+        attendanceResult,
+      ] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('full_name')
+          .eq(
+            'id',
+            user.id
+          )
+          .single(),
+
+        supabase
+          .from('classes')
+          .select(`
+            id,
+            name,
+            school_year,
+            subject,
+            created_at
+          `),
+
+        supabase
+          .from(
+            'attendance_sessions'
+          )
+          .select(`
+            class_id,
+
+            attendance_records (
+              status
             )
-          : null;
-    }
+          `)
+          .not(
+            'finalized_at',
+            'is',
+            null
+          ),
+      ]);
 
-    homeCache = {
-      classes: newClasses,
-      fullName: newFullName,
-      attendancePercentages:
-        newAttendancePercentages,
-    };
+      if (
+        profileResult.error
+      ) {
+        console.error(
+          'Fejl ved hentning af profil:',
+          profileResult.error
+        );
+      }
 
-    setClasses(
-      newClasses
-    );
+      if (
+        classesResult.error
+      ) {
+        console.error(
+          'Fejl ved hentning af klasser:',
+          classesResult.error
+        );
 
-    setFullName(
-      newFullName
-    );
+        setLoading(false);
+        return;
+      }
 
-    setAttendancePercentages(
-      newAttendancePercentages
-    );
+      if (
+        attendanceResult.error
+      ) {
+        console.error(
+          'Fejl ved hentning af fremmøde:',
+          attendanceResult.error
+        );
+      }
 
-    setLoading(false);
-  }, []);
+      const newClasses =
+        (classesResult.data ??
+          []) as SchoolClass[];
+
+      const newFullName =
+        profileResult.data
+          ?.full_name ??
+        '';
+
+      const attendanceSessions =
+        attendanceResult.error
+          ? []
+          : ((attendanceResult.data ??
+              []) as AttendanceSessionSummary[]);
+
+      const newAttendancePercentages:
+        AttendancePercentages = {};
+
+      for (
+        const schoolClass of
+        newClasses
+      ) {
+        const classSessions =
+          attendanceSessions.filter(
+            (session) =>
+              session.class_id ===
+              schoolClass.id
+          );
+
+        let totalRegistrations = 0;
+        let totalAttendance = 0;
+
+        for (
+          const session of
+          classSessions
+        ) {
+          for (
+            const record of
+            session
+              .attendance_records ??
+            []
+          ) {
+            totalRegistrations += 1;
+
+            if (
+              record.status ===
+                'present' ||
+              record.status ===
+                'late'
+            ) {
+              totalAttendance += 1;
+            }
+          }
+        }
+
+        newAttendancePercentages[
+          schoolClass.id
+        ] =
+          totalRegistrations > 0
+            ? Math.round(
+                (totalAttendance /
+                  totalRegistrations) *
+                  100
+              )
+            : null;
+      }
+
+      homeCache = {
+        classes:
+          newClasses,
+
+        fullName:
+          newFullName,
+
+        attendancePercentages:
+          newAttendancePercentages,
+      };
+
+      setClasses(
+        newClasses
+      );
+
+      setFullName(
+        newFullName
+      );
+
+      setAttendancePercentages(
+        newAttendancePercentages
+      );
+
+      setLoading(false);
+    }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -250,37 +311,103 @@ export default function HomeScreen() {
     }, [loadHome])
   );
 
+  const sortedClasses =
+    useMemo(() => {
+      const result =
+        [...classes];
+
+      result.sort(
+        (a, b) => {
+          const aTime =
+            new Date(
+              a.created_at
+            ).getTime();
+
+          const bTime =
+            new Date(
+              b.created_at
+            ).getTime();
+
+          if (
+            sortOption ===
+            'newest'
+          ) {
+            return (
+              bTime -
+              aTime
+            );
+          }
+
+          return (
+            aTime -
+            bTime
+          );
+        }
+      );
+
+      return result;
+    }, [
+      classes,
+      sortOption,
+    ]);
+
   const firstName =
     fullName
       .trim()
       .split(' ')[0];
 
   return (
-    <View style={styles.container}>
+    <View
+      style={
+        styles.container
+      }
+    >
       {/* FAST HEADER */}
 
-      <View style={styles.header}>
-        <Text style={styles.greeting}>
+      <View
+        style={
+          styles.header
+        }
+      >
+        <Text
+          style={
+            styles.greeting
+          }
+        >
           {getGreeting()}
           {firstName
             ? ` ${firstName}`
             : ''}
         </Text>
 
-        <View style={styles.dateRow}>
+        <View
+          style={
+            styles.dateRow
+          }
+        >
           <Ionicons
             name="calendar-outline"
             size={14}
-            color={COLORS.navy}
+            color={
+              COLORS.navy
+            }
           />
 
-          <Text style={styles.dateText}>
+          <Text
+            style={
+              styles.dateText
+            }
+          >
             {getFormattedDate()} · Uge{' '}
             {getWeekNumber()}
           </Text>
         </View>
 
-        <Text style={styles.title}>
+        <Text
+          style={
+            styles.title
+          }
+        >
           Dine klasser
         </Text>
       </View>
@@ -288,7 +415,9 @@ export default function HomeScreen() {
       {/* SCROLL OMRÅDE */}
 
       <ScrollView
-        style={styles.scroll}
+        style={
+          styles.scroll
+        }
         contentContainerStyle={
           styles.scrollContent
         }
@@ -298,14 +427,20 @@ export default function HomeScreen() {
       >
         {/* HANDLINGER */}
 
-        <View style={styles.actionRow}>
+        <View
+          style={
+            styles.actionRow
+          }
+        >
           <Pressable
             onPress={() =>
               router.push(
                 '/classes/create'
               )
             }
-            style={({ pressed }) => [
+            style={({
+              pressed,
+            }) => [
               styles.actionCard,
 
               pressed &&
@@ -320,7 +455,9 @@ export default function HomeScreen() {
               <Ionicons
                 name="add"
                 size={22}
-                color={COLORS.navy}
+                color={
+                  COLORS.navy
+                }
               />
             </View>
 
@@ -343,9 +480,13 @@ export default function HomeScreen() {
 
           <Pressable
             onPress={() =>
-              router.push('/invites')
+              router.push(
+                '/invites'
+              )
             }
-            style={({ pressed }) => [
+            style={({
+              pressed,
+            }) => [
               styles.actionCard,
 
               pressed &&
@@ -360,7 +501,9 @@ export default function HomeScreen() {
               <Ionicons
                 name="mail-outline"
                 size={20}
-                color={COLORS.navy}
+                color={
+                  COLORS.navy
+                }
               />
             </View>
 
@@ -382,12 +525,131 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.divider} />
+        <View
+          style={
+            styles.divider
+          }
+        />
+
+        {/* SORTERING */}
+
+        {classes.length >
+          0 && (
+          <>
+            <View
+              style={
+                styles.sortHeader
+              }
+            >
+              <View
+                style={
+                  styles.sortTitleRow
+                }
+              >
+                <Ionicons
+                  name="swap-vertical-outline"
+                  size={15}
+                  color={
+                    COLORS.navy
+                  }
+                />
+
+                <Text
+                  style={
+                    styles.sortTitle
+                  }
+                >
+                  Sortér
+                </Text>
+              </View>
+
+              <Text
+                style={
+                  styles.classCount
+                }
+              >
+                {
+                  classes.length
+                }{' '}
+                {classes.length ===
+                1
+                  ? 'klasse'
+                  : 'klasser'}
+              </Text>
+            </View>
+
+            <View
+              style={
+                styles.sortRow
+              }
+            >
+              {SORT_OPTIONS.map(
+                (option) => {
+                  const selected =
+                    sortOption ===
+                    option.key;
+
+                  return (
+                    <Pressable
+                      key={
+                        option.key
+                      }
+                      onPress={() =>
+                        setSortOption(
+                          option.key
+                        )
+                      }
+                      style={({
+                        pressed,
+                      }) => [
+                        styles.sortChip,
+
+                        selected &&
+                          styles
+                            .sortChipSelected,
+
+                        pressed &&
+                          styles.pressed,
+                      ]}
+                    >
+                      <Ionicons
+                        name={
+                          option.icon
+                        }
+                        size={14}
+                        color={
+                          selected
+                            ? COLORS.white
+                            : COLORS.navy
+                        }
+                      />
+
+                      <Text
+                        style={[
+                          styles.sortChipText,
+
+                          selected &&
+                            styles
+                              .sortChipTextSelected,
+                        ]}
+                      >
+                        {
+                          option.label
+                        }
+                      </Text>
+                    </Pressable>
+                  );
+                }
+              )}
+            </View>
+          </>
+        )}
 
         {/* KLASSER */}
 
         {loading &&
-        classes.length === 0 ? (
+        classes.length ===
+          0 ? (
           <View
             style={
               styles.loadingContainer
@@ -395,10 +657,13 @@ export default function HomeScreen() {
           >
             <ActivityIndicator
               size="small"
-              color={COLORS.navy}
+              color={
+                COLORS.navy
+              }
             />
           </View>
-        ) : classes.length === 0 ? (
+        ) : classes.length ===
+          0 ? (
           <View
             style={
               styles.emptyState
@@ -412,7 +677,9 @@ export default function HomeScreen() {
               <Ionicons
                 name="school-outline"
                 size={26}
-                color={COLORS.navy}
+                color={
+                  COLORS.navy
+                }
               />
             </View>
 
@@ -439,8 +706,10 @@ export default function HomeScreen() {
               styles.classList
             }
           >
-            {classes.map(
-              (schoolClass) => {
+            {sortedClasses.map(
+              (
+                schoolClass
+              ) => {
                 const attendance =
                   attendancePercentages[
                     schoolClass.id
@@ -473,7 +742,9 @@ export default function HomeScreen() {
                       <Ionicons
                         name="school-outline"
                         size={21}
-                        color={COLORS.navy}
+                        color={
+                          COLORS.navy
+                        }
                       />
                     </View>
 
@@ -505,7 +776,9 @@ export default function HomeScreen() {
                           <Ionicons
                             name="book-outline"
                             size={14}
-                            color={COLORS.navy}
+                            color={
+                              COLORS.navy
+                            }
                           />
 
                           <Text
@@ -536,7 +809,9 @@ export default function HomeScreen() {
                               <Ionicons
                                 name="calendar-outline"
                                 size={14}
-                                color={COLORS.navy}
+                                color={
+                                  COLORS.navy
+                                }
                               />
 
                               <Text
@@ -619,7 +894,8 @@ function getGreeting() {
 }
 
 function getFormattedDate() {
-  const now = new Date();
+  const now =
+    new Date();
 
   const formatted =
     now.toLocaleDateString(
@@ -640,18 +916,21 @@ function getFormattedDate() {
 }
 
 function getWeekNumber() {
-  const now = new Date();
+  const now =
+    new Date();
 
-  const date = new Date(
-    Date.UTC(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    )
-  );
+  const date =
+    new Date(
+      Date.UTC(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      )
+    );
 
   const dayNumber =
-    date.getUTCDay() || 7;
+    date.getUTCDay() ||
+    7;
 
   date.setUTCDate(
     date.getUTCDate() +
@@ -681,11 +960,15 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+
       backgroundColor:
         COLORS.white,
+
       paddingHorizontal: 20,
       paddingTop: 70,
     },
+
+    /* HEADER */
 
     header: {
       marginBottom: 20,
@@ -693,27 +976,42 @@ const styles =
 
     greeting: {
       fontSize: 16,
-      fontWeight: '600',
-      color: COLORS.navy,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.navy,
     },
 
     dateRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 5,
+
       marginTop: 4,
       marginBottom: 8,
     },
 
     dateText: {
       fontSize: 13,
-      color: COLORS.lightMuted,
+
+      color:
+        COLORS.lightMuted,
     },
 
     title: {
       fontSize: 34,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     scroll: {
@@ -722,29 +1020,42 @@ const styles =
 
     scrollContent: {
       paddingHorizontal: 4,
+
       paddingTop: 4,
       paddingBottom: 50,
     },
 
+    /* HANDLINGER */
+
     actionRow: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
+
       gap: 12,
     },
 
     actionCard: {
       flex: 1,
+
       backgroundColor:
         COLORS.white,
+
       borderRadius: 18,
+
       padding: 16,
+
       minHeight: 122,
 
-      shadowColor: '#000000',
+      shadowColor:
+        '#000000',
+
       shadowOffset: {
         width: 0,
         height: 4,
       },
+
       shadowOpacity: 0.04,
+
       shadowRadius: 14,
 
       elevation: 1,
@@ -752,6 +1063,7 @@ const styles =
 
     actionCardPressed: {
       opacity: 0.75,
+
       transform: [
         {
           scale: 0.98,
@@ -762,44 +1074,166 @@ const styles =
     actionIcon: {
       width: 38,
       height: 38,
+
       borderRadius: 12,
+
       backgroundColor:
         COLORS.navySoft,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
+
       marginBottom: 12,
     },
 
     actionTitle: {
       fontSize: 16,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     actionSubtitle: {
       fontSize: 12,
-      color: COLORS.lightMuted,
+
+      color:
+        COLORS.lightMuted,
+
       marginTop: 4,
     },
 
     divider: {
       height: 1,
+
       backgroundColor:
         '#EEF1F4',
+
       marginHorizontal: 12,
+
       marginVertical: 20,
     },
 
+    /* SORTERING */
+
+    sortHeader: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
+      gap: 12,
+
+      marginBottom: 9,
+    },
+
+    sortTitleRow: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 5,
+    },
+
+    sortTitle: {
+      fontSize: 13,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.muted,
+    },
+
+    classCount: {
+      fontSize: 11,
+
+      color:
+        COLORS.lightMuted,
+    },
+
+    sortRow: {
+      flexDirection:
+        'row',
+
+      gap: 8,
+
+      marginBottom: 20,
+    },
+
+    sortChip: {
+      minHeight: 38,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 5,
+
+      paddingHorizontal: 13,
+
+      borderRadius: 12,
+
+      backgroundColor:
+        COLORS.soft,
+
+      borderWidth: 1,
+
+      borderColor:
+        COLORS.soft,
+    },
+
+    sortChipSelected: {
+      backgroundColor:
+        COLORS.navy,
+
+      borderColor:
+        COLORS.navy,
+    },
+
+    sortChipText: {
+      fontSize: 12,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.navy,
+    },
+
+    sortChipTextSelected: {
+      color:
+        COLORS.white,
+    },
+
+    /* KLASSER */
+
     loadingContainer: {
       paddingVertical: 40,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
     },
 
     classList: {
       gap: 16,
+
       paddingHorizontal: 2,
       paddingVertical: 4,
     },
@@ -807,17 +1241,27 @@ const styles =
     card: {
       backgroundColor:
         COLORS.white,
-      borderRadius: 20,
-      padding: 18,
-      flexDirection: 'row',
-      alignItems: 'center',
 
-      shadowColor: '#000000',
+      borderRadius: 20,
+
+      padding: 18,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      shadowColor:
+        '#000000',
+
       shadowOffset: {
         width: 0,
         height: 4,
       },
+
       shadowOpacity: 0.04,
+
       shadowRadius: 14,
 
       elevation: 1,
@@ -825,6 +1269,7 @@ const styles =
 
     cardPressed: {
       opacity: 0.75,
+
       transform: [
         {
           scale: 0.99,
@@ -835,97 +1280,152 @@ const styles =
     classIcon: {
       width: 44,
       height: 44,
+
       borderRadius: 14,
+
       backgroundColor:
         COLORS.navySoft,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
+
       marginRight: 13,
     },
 
     classInfo: {
       flex: 1,
+
       paddingRight: 8,
     },
 
     className: {
       fontSize: 20,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     classMetaRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flexWrap: 'wrap',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      flexWrap:
+        'wrap',
+
       marginTop: 6,
+
       gap: 5,
     },
 
     metaItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 4,
     },
 
     classMeta: {
       fontSize: 13,
-      color: COLORS.muted,
+
+      color:
+        COLORS.muted,
     },
 
     metaSeparator: {
       fontSize: 13,
-      color: COLORS.lightMuted,
+
+      color:
+        COLORS.lightMuted,
     },
 
     attendanceContainer: {
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
+
       marginLeft: 8,
     },
 
     attendanceCircle: {
       width: 52,
       height: 52,
+
       borderRadius: 26,
+
       borderWidth: 3,
+
       borderColor:
         COLORS.navy,
+
       backgroundColor:
         '#F7FAFC',
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
     },
 
     attendancePercent: {
       fontSize: 14,
-      fontWeight: '800',
-      color: COLORS.navy,
+
+      fontWeight:
+        '800',
+
+      color:
+        COLORS.navy,
     },
 
     attendanceLabel: {
       fontSize: 10,
-      fontWeight: '700',
-      color: COLORS.navy,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.navy,
+
       marginTop: 4,
     },
+
+    /* EMPTY */
 
     emptyState: {
       backgroundColor:
         COLORS.white,
-      borderRadius: 20,
-      padding: 28,
-      alignItems: 'center',
 
-      shadowColor: '#000000',
+      borderRadius: 20,
+
+      padding: 28,
+
+      alignItems:
+        'center',
+
+      shadowColor:
+        '#000000',
+
       shadowOffset: {
         width: 0,
         height: 4,
       },
+
       shadowOpacity: 0.04,
+
       shadowRadius: 14,
 
       elevation: 1,
@@ -934,25 +1434,44 @@ const styles =
     emptyIcon: {
       width: 52,
       height: 52,
+
       borderRadius: 16,
+
       backgroundColor:
         COLORS.navySoft,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
+
       marginBottom: 14,
     },
 
     emptyTitle: {
       fontSize: 18,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     emptyText: {
       fontSize: 15,
-      color: COLORS.muted,
+
+      color:
+        COLORS.muted,
+
       marginTop: 6,
-      textAlign: 'center',
+
+      textAlign:
+        'center',
+    },
+
+    pressed: {
+      opacity: 0.75,
     },
   });

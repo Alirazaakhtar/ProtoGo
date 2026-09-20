@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import BackButton from '@/app/components/BackButton';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 
 import {
   ActivityIndicator,
@@ -133,9 +134,17 @@ export default function StudentScreen() {
         newStudent
       );
 
-      setStudent(newStudent);
-      setLoading(false);
-    }, [id, studentId]);
+      setStudent(
+        newStudent
+      );
+
+      setLoading(
+        false
+      );
+    }, [
+      id,
+      studentId,
+    ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -164,6 +173,26 @@ export default function StudentScreen() {
     }
   }
 
+  async function copyPhone(
+    phone: string
+  ) {
+    try {
+      await Clipboard.setStringAsync(
+        phone
+      );
+
+      Alert.alert(
+        'Nummer kopieret',
+        `${phone} er kopieret til udklipsholderen.`
+      );
+    } catch {
+      Alert.alert(
+        'Kunne ikke kopiere',
+        'Telefonnummeret kunne ikke kopieres.'
+      );
+    }
+  }
+
   async function sendEmail(
     email: string
   ) {
@@ -183,17 +212,27 @@ export default function StudentScreen() {
     phone: string
   ) {
     let number =
-      phone.replace(/\D/g, '');
+      phone.replace(
+        /\D/g,
+        ''
+      );
 
-    if (number.length === 8) {
-      number = `45${number}`;
+    if (
+      number.length === 8
+    ) {
+      number =
+        `45${number}`;
     }
 
     if (
-      number.startsWith('00')
+      number.startsWith(
+        '00'
+      )
     ) {
       number =
-        number.substring(2);
+        number.substring(
+          2
+        );
     }
 
     try {
@@ -208,12 +247,21 @@ export default function StudentScreen() {
     }
   }
 
-  if (loading && !student) {
+  if (
+    loading &&
+    !student
+  ) {
     return (
-      <View style={styles.center}>
+      <View
+        style={
+          styles.center
+        }
+      >
         <ActivityIndicator
           size="small"
-          color={COLORS.navy}
+          color={
+            COLORS.navy
+          }
         />
       </View>
     );
@@ -221,7 +269,11 @@ export default function StudentScreen() {
 
   if (!student) {
     return (
-      <View style={styles.center}>
+      <View
+        style={
+          styles.center
+        }
+      >
         <Text>
           Eleven blev ikke fundet.
         </Text>
@@ -229,9 +281,16 @@ export default function StudentScreen() {
     );
   }
 
+  const age =
+    getAge(
+      student.birth_date
+    );
+
   return (
     <ScrollView
-      style={styles.container}
+      style={
+        styles.container
+      }
       contentContainerStyle={
         styles.content
       }
@@ -254,12 +313,18 @@ export default function StudentScreen() {
           }
         >
           <Text
-            style={styles.eyebrow}
+            style={
+              styles.eyebrow
+            }
           >
             Elev
           </Text>
 
-          <Text style={styles.title}>
+          <Text
+            style={
+              styles.title
+            }
+          >
             {student.first_name}{' '}
             {student.last_name}
           </Text>
@@ -270,14 +335,18 @@ export default function StudentScreen() {
             router.push({
               pathname:
                 '/classes/[id]/students/[studentId]/edit',
+
               params: {
                 id,
                 studentId,
               },
             })
           }
-          style={({ pressed }) => [
+          style={({
+            pressed,
+          }) => [
             styles.editStudentButton,
+
             pressed &&
               styles.pressed,
           ]}
@@ -285,7 +354,9 @@ export default function StudentScreen() {
           <Ionicons
             name="create-outline"
             size={17}
-            color={COLORS.navy}
+            color={
+              COLORS.navy
+            }
           />
 
           <Text
@@ -300,7 +371,11 @@ export default function StudentScreen() {
 
       {/* ELEV OPLYSNINGER */}
 
-      <View style={styles.infoCard}>
+      <View
+        style={
+          styles.infoCard
+        }
+      >
         <InfoRow
           icon="calendar-outline"
           label="Fødselsdato"
@@ -314,12 +389,31 @@ export default function StudentScreen() {
         />
 
         <InfoRow
+          icon="time-outline"
+          label="Alder"
+          value={
+            age !== null
+              ? `${age} år`
+              : 'Ikke angivet'
+          }
+        />
+
+        <InfoRow
           icon="call-outline"
           label="Telefon"
           value={
             student.phone ??
             'Ikke angivet'
           }
+          onAction={
+            student.phone
+              ? () =>
+                  copyPhone(
+                    student.phone!
+                  )
+              : undefined
+          }
+          actionLabel="Kopiér elevens telefonnummer"
           last
         />
       </View>
@@ -344,14 +438,18 @@ export default function StudentScreen() {
             router.push({
               pathname:
                 '/classes/[id]/students/[studentId]/guardians/create',
+
               params: {
                 id,
                 studentId,
               },
             })
           }
-          style={({ pressed }) => [
+          style={({
+            pressed,
+          }) => [
             styles.addButton,
+
             pressed &&
               styles.pressed,
           ]}
@@ -359,20 +457,29 @@ export default function StudentScreen() {
           <Ionicons
             name="person-add-outline"
             size={17}
-            color={COLORS.navy}
+            color={
+              COLORS.navy
+            }
           />
 
           <Text
-            style={styles.addText}
+            style={
+              styles.addText
+            }
           >
             Tilføj
           </Text>
         </Pressable>
       </View>
 
-      {student.student_guardians
+      {student
+        .student_guardians
         .length === 0 ? (
-        <View style={styles.empty}>
+        <View
+          style={
+            styles.empty
+          }
+        >
           <View
             style={
               styles.emptyIcon
@@ -381,7 +488,9 @@ export default function StudentScreen() {
             <Ionicons
               name="people-outline"
               size={26}
-              color={COLORS.navy}
+              color={
+                COLORS.navy
+              }
             />
           </View>
 
@@ -393,7 +502,11 @@ export default function StudentScreen() {
             Ingen forældre tilføjet
           </Text>
 
-          <Text style={styles.muted}>
+          <Text
+            style={
+              styles.muted
+            }
+          >
             Tilføj kontaktoplysninger
             på elevens forældre eller
             værger.
@@ -410,13 +523,17 @@ export default function StudentScreen() {
               const guardian =
                 link.guardians;
 
-              if (!guardian) {
+              if (
+                !guardian
+              ) {
                 return null;
               }
 
               return (
                 <View
-                  key={guardian.id}
+                  key={
+                    guardian.id
+                  }
                   style={
                     styles.guardianCard
                   }
@@ -441,7 +558,9 @@ export default function StudentScreen() {
                         <Ionicons
                           name="person-outline"
                           size={20}
-                          color={COLORS.navy}
+                          color={
+                            COLORS.navy
+                          }
                         />
                       </View>
 
@@ -476,9 +595,11 @@ export default function StudentScreen() {
                         router.push({
                           pathname:
                             '/classes/[id]/students/[studentId]/guardians/[guardianId]/edit',
+
                           params: {
                             id,
                             studentId,
+
                             guardianId:
                               guardian.id,
                           },
@@ -488,6 +609,7 @@ export default function StudentScreen() {
                         pressed,
                       }) => [
                         styles.editGuardianButton,
+
                         pressed &&
                           styles.pressed,
                       ]}
@@ -495,7 +617,9 @@ export default function StudentScreen() {
                       <Ionicons
                         name="create-outline"
                         size={16}
-                        color={COLORS.navy}
+                        color={
+                          COLORS.navy
+                        }
                       />
 
                       <Text
@@ -523,21 +647,56 @@ export default function StudentScreen() {
                             styles.contactRow
                           }
                         >
-                          <Ionicons
-                            name="call-outline"
-                            size={16}
-                            color={COLORS.navy}
-                          />
-
-                          <Text
+                          <View
                             style={
-                              styles.contactText
+                              styles.contactMain
                             }
                           >
-                            {
-                              guardian.phone
+                            <Ionicons
+                              name="call-outline"
+                              size={16}
+                              color={
+                                COLORS.navy
+                              }
+                            />
+
+                            <Text
+                              style={
+                                styles.contactText
+                              }
+                            >
+                              {
+                                guardian.phone
+                              }
+                            </Text>
+                          </View>
+
+                          <Pressable
+                            onPress={() =>
+                              copyPhone(
+                                guardian.phone!
+                              )
                             }
-                          </Text>
+                            accessibilityRole="button"
+                            accessibilityLabel="Kopiér telefonnummer"
+                            hitSlop={8}
+                            style={({
+                              pressed,
+                            }) => [
+                              styles.copyButton,
+
+                              pressed &&
+                                styles.copyButtonPressed,
+                            ]}
+                          >
+                            <Ionicons
+                              name="copy-outline"
+                              size={17}
+                              color={
+                                COLORS.navy
+                              }
+                            />
+                          </Pressable>
                         </View>
                       )}
 
@@ -547,24 +706,32 @@ export default function StudentScreen() {
                             styles.contactRow
                           }
                         >
-                          <Ionicons
-                            name="mail-outline"
-                            size={16}
-                            color={COLORS.navy}
-                          />
-
-                          <Text
+                          <View
                             style={
-                              styles.contactText
-                            }
-                            numberOfLines={
-                              1
+                              styles.contactMain
                             }
                           >
-                            {
-                              guardian.email
-                            }
-                          </Text>
+                            <Ionicons
+                              name="mail-outline"
+                              size={16}
+                              color={
+                                COLORS.navy
+                              }
+                            />
+
+                            <Text
+                              style={
+                                styles.contactText
+                              }
+                              numberOfLines={
+                                1
+                              }
+                            >
+                              {
+                                guardian.email
+                              }
+                            </Text>
+                          </View>
                         </View>
                       )}
                     </View>
@@ -588,6 +755,7 @@ export default function StudentScreen() {
                           pressed,
                         }) => [
                           styles.primaryButton,
+
                           pressed &&
                             styles.buttonPressed,
                         ]}
@@ -595,7 +763,9 @@ export default function StudentScreen() {
                         <Ionicons
                           name="call-outline"
                           size={17}
-                          color={COLORS.white}
+                          color={
+                            COLORS.white
+                          }
                         />
 
                         <Text
@@ -619,6 +789,7 @@ export default function StudentScreen() {
                           pressed,
                         }) => [
                           styles.whatsappButton,
+
                           pressed &&
                             styles.buttonPressed,
                         ]}
@@ -626,7 +797,9 @@ export default function StudentScreen() {
                         <Ionicons
                           name="logo-whatsapp"
                           size={18}
-                          color={COLORS.white}
+                          color={
+                            COLORS.white
+                          }
                         />
 
                         <Text
@@ -650,6 +823,7 @@ export default function StudentScreen() {
                           pressed,
                         }) => [
                           styles.secondaryButton,
+
                           pressed &&
                             styles.buttonPressed,
                         ]}
@@ -657,7 +831,9 @@ export default function StudentScreen() {
                         <Ionicons
                           name="mail-outline"
                           size={17}
-                          color={COLORS.navy}
+                          color={
+                            COLORS.navy
+                          }
                         />
 
                         <Text
@@ -682,11 +858,14 @@ export default function StudentScreen() {
 
 type InfoRowProps = {
   icon:
-    | 'calendar-outline'
-    | 'call-outline';
+    keyof typeof Ionicons.glyphMap;
 
   label: string;
   value: string;
+
+  onAction?: () => void;
+  actionLabel?: string;
+
   last?: boolean;
 };
 
@@ -694,6 +873,8 @@ function InfoRow({
   icon,
   label,
   value,
+  onAction,
+  actionLabel,
   last = false,
 }: InfoRowProps) {
   return (
@@ -713,7 +894,9 @@ function InfoRow({
         <Ionicons
           name={icon}
           size={19}
-          color={COLORS.navy}
+          color={
+            COLORS.navy
+          }
         />
       </View>
 
@@ -738,8 +921,81 @@ function InfoRow({
           {value}
         </Text>
       </View>
+
+      {onAction && (
+        <Pressable
+          onPress={
+            onAction
+          }
+          accessibilityRole="button"
+          accessibilityLabel={
+            actionLabel ??
+            'Kopiér'
+          }
+          hitSlop={8}
+          style={({
+            pressed,
+          }) => [
+            styles.infoCopyButton,
+
+            pressed &&
+              styles.copyButtonPressed,
+          ]}
+        >
+          <Ionicons
+            name="copy-outline"
+            size={17}
+            color={
+              COLORS.navy
+            }
+          />
+        </Pressable>
+      )}
     </View>
   );
+}
+
+function getAge(
+  birthDate: string | null
+) {
+  if (!birthDate) {
+    return null;
+  }
+
+  const today =
+    new Date();
+
+  const birth =
+    new Date(
+      `${birthDate}T12:00:00`
+    );
+
+  if (
+    Number.isNaN(
+      birth.getTime()
+    )
+  ) {
+    return null;
+  }
+
+  let age =
+    today.getFullYear() -
+    birth.getFullYear();
+
+  const monthDifference =
+    today.getMonth() -
+    birth.getMonth();
+
+  if (
+    monthDifference < 0 ||
+    (monthDifference === 0 &&
+      today.getDate() <
+        birth.getDate())
+  ) {
+    age -= 1;
+  }
+
+  return age;
 }
 
 function formatDate(
@@ -749,7 +1005,9 @@ function formatDate(
     year,
     month,
     day,
-  ] = date.split('-');
+  ] = date.split(
+    '-'
+  );
 
   if (
     !year ||
@@ -766,64 +1024,93 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+
       backgroundColor:
         COLORS.white,
     },
 
     content: {
       padding: 20,
+
       paddingTop: 70,
       paddingBottom: 60,
     },
 
     center: {
       flex: 1,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
+
       backgroundColor:
         COLORS.white,
     },
 
     eyebrow: {
       fontSize: 14,
-      color: COLORS.muted,
+
+      color:
+        COLORS.muted,
     },
 
     title: {
       fontSize: 34,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
+
       marginTop: 4,
     },
 
     /* HEADER */
 
     studentHeader: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
+
       justifyContent:
         'space-between',
-      alignItems: 'flex-start',
+
+      alignItems:
+        'flex-start',
+
       marginBottom: 24,
     },
 
     studentHeaderText: {
       flex: 1,
+
       paddingRight: 12,
     },
 
     editStudentButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 5,
+
       marginTop: 8,
+
       paddingVertical: 5,
     },
 
     editStudentText: {
       fontSize: 14,
-      fontWeight: '700',
-      color: COLORS.navy,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.navy,
     },
 
     /* INFO */
@@ -833,10 +1120,13 @@ const styles =
         COLORS.white,
 
       borderRadius: 20,
+
       paddingHorizontal: 20,
+
       marginBottom: 32,
 
-      shadowColor: '#000000',
+      shadowColor:
+        '#000000',
 
       shadowOffset: {
         width: 0,
@@ -844,6 +1134,7 @@ const styles =
       },
 
       shadowOpacity: 0.04,
+
       shadowRadius: 14,
 
       elevation: 1,
@@ -851,10 +1142,15 @@ const styles =
 
     infoRow: {
       minHeight: 76,
-      flexDirection: 'row',
-      alignItems: 'center',
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
 
       borderBottomWidth: 1,
+
       borderBottomColor:
         '#F3F4F6',
     },
@@ -866,12 +1162,15 @@ const styles =
     infoIcon: {
       width: 40,
       height: 40,
+
       borderRadius: 12,
 
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -884,49 +1183,91 @@ const styles =
 
     infoLabel: {
       fontSize: 12,
+
       color:
         COLORS.lightMuted,
     },
 
     infoValue: {
       fontSize: 16,
-      fontWeight: '600',
-      color: COLORS.text,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.text,
+
       marginTop: 3,
+    },
+
+    infoCopyButton: {
+      width: 36,
+      height: 36,
+
+      borderRadius: 11,
+
+      backgroundColor:
+        COLORS.navySoft,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      marginLeft: 10,
     },
 
     /* SECTION */
 
     sectionHeader: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
+
       justifyContent:
         'space-between',
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       marginBottom: 14,
     },
 
     sectionTitle: {
       fontSize: 21,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     addButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 5,
+
       paddingVertical: 6,
     },
 
     addText: {
-      color: COLORS.navy,
-      fontWeight: '700',
+      color:
+        COLORS.navy,
+
+      fontWeight:
+        '700',
     },
 
     /* GUARDIANS */
 
     guardianList: {
       gap: 16,
+
       paddingHorizontal: 2,
       paddingVertical: 4,
     },
@@ -936,9 +1277,11 @@ const styles =
         COLORS.white,
 
       borderRadius: 20,
+
       padding: 20,
 
-      shadowColor: '#000000',
+      shadowColor:
+        '#000000',
 
       shadowOffset: {
         width: 0,
@@ -946,34 +1289,47 @@ const styles =
       },
 
       shadowOpacity: 0.04,
+
       shadowRadius: 14,
 
       elevation: 1,
     },
 
     guardianHeader: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
+
       justifyContent:
         'space-between',
-      alignItems: 'flex-start',
+
+      alignItems:
+        'flex-start',
     },
 
     guardianIdentity: {
       flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       paddingRight: 10,
     },
 
     guardianAvatar: {
       width: 42,
       height: 42,
+
       borderRadius: 21,
 
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -986,71 +1342,149 @@ const styles =
 
     guardianName: {
       fontSize: 18,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     relationship: {
       fontSize: 13,
-      color: COLORS.muted,
+
+      color:
+        COLORS.muted,
+
       marginTop: 3,
     },
 
     editGuardianButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 4,
+
       paddingVertical: 4,
     },
 
     editText: {
       fontSize: 14,
-      fontWeight: '700',
-      color: COLORS.navy,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.navy,
     },
 
     /* CONTACT */
 
     contactSection: {
       gap: 9,
+
       marginTop: 18,
+
       paddingTop: 16,
 
       borderTopWidth: 1,
+
       borderTopColor:
         '#F3F4F6',
     },
 
     contactRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      minHeight: 36,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
+      gap: 10,
+    },
+
+    contactMain: {
+      flex: 1,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 8,
     },
 
     contactText: {
       flex: 1,
+
       fontSize: 14,
-      color: '#374151',
+
+      color:
+        '#374151',
+    },
+
+    copyButton: {
+      width: 34,
+      height: 34,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        COLORS.navySoft,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    copyButtonPressed: {
+      opacity: 0.7,
+
+      transform: [
+        {
+          scale: 0.96,
+        },
+      ],
     },
 
     /* ACTIONS */
 
     actionRow: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
+
       gap: 8,
+
       marginTop: 18,
     },
 
     primaryButton: {
       flex: 1,
+
       height: 48,
+
       borderRadius: 14,
 
       backgroundColor:
         COLORS.navy,
 
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -1065,27 +1499,38 @@ const styles =
       },
 
       shadowOpacity: 0.11,
+
       shadowRadius: 9,
 
       elevation: 2,
     },
 
     primaryButtonText: {
-      color: COLORS.white,
-      fontWeight: '700',
+      color:
+        COLORS.white,
+
+      fontWeight:
+        '700',
+
       fontSize: 13,
     },
 
     whatsappButton: {
       flex: 1,
+
       height: 48,
+
       borderRadius: 14,
 
       backgroundColor:
         '#25D366',
 
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -1093,21 +1538,31 @@ const styles =
     },
 
     whatsappButtonText: {
-      color: COLORS.white,
-      fontWeight: '700',
+      color:
+        COLORS.white,
+
+      fontWeight:
+        '700',
+
       fontSize: 12,
     },
 
     secondaryButton: {
       flex: 1,
+
       height: 48,
+
       borderRadius: 14,
 
       backgroundColor:
         COLORS.navySoft,
 
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -1115,8 +1570,12 @@ const styles =
     },
 
     secondaryButtonText: {
-      color: COLORS.navy,
-      fontWeight: '700',
+      color:
+        COLORS.navy,
+
+      fontWeight:
+        '700',
+
       fontSize: 13,
     },
 
@@ -1141,10 +1600,14 @@ const styles =
         COLORS.white,
 
       borderRadius: 20,
-      padding: 28,
-      alignItems: 'center',
 
-      shadowColor: '#000000',
+      padding: 28,
+
+      alignItems:
+        'center',
+
+      shadowColor:
+        '#000000',
 
       shadowOffset: {
         width: 0,
@@ -1152,6 +1615,7 @@ const styles =
       },
 
       shadowOpacity: 0.04,
+
       shadowRadius: 14,
 
       elevation: 1,
@@ -1160,12 +1624,15 @@ const styles =
     emptyIcon: {
       width: 52,
       height: 52,
+
       borderRadius: 16,
 
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -1174,14 +1641,23 @@ const styles =
 
     emptyTitle: {
       fontSize: 17,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     muted: {
-      color: COLORS.muted,
+      color:
+        COLORS.muted,
+
       marginTop: 6,
-      textAlign: 'center',
+
+      textAlign:
+        'center',
+
       lineHeight: 20,
     },
   });

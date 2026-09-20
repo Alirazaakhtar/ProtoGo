@@ -1,4 +1,9 @@
-import { useCallback, useState } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
+
 import BackButton from '@/app/components/BackButton';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -8,6 +13,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
@@ -60,13 +66,20 @@ type AttendanceSession = {
 
 export default function ClassScreen() {
   const { id } =
-    useLocalSearchParams<{ id: string }>();
+    useLocalSearchParams<{
+      id: string;
+    }>();
 
   const [schoolClass, setSchoolClass] =
     useState<SchoolClass | null>(null);
 
   const [students, setStudents] =
     useState<Student[]>([]);
+
+  const [
+    studentSearch,
+    setStudentSearch,
+  ] = useState('');
 
   const [
     attendancePercentage,
@@ -179,7 +192,8 @@ export default function ClassScreen() {
           totalRegistrations += 1;
 
           if (
-            record.status === 'present' ||
+            record.status ===
+              'present' ||
             record.status === 'late'
           ) {
             totalAttendance += 1;
@@ -212,7 +226,10 @@ export default function ClassScreen() {
           : null;
 
       setSchoolClass(classData);
-      setStudents(studentData);
+
+      setStudents(
+        studentData
+      );
 
       setAttendancePercentage(
         attendance
@@ -231,12 +248,72 @@ export default function ClassScreen() {
     }, [loadClass])
   );
 
-  if (loading && !schoolClass) {
+  const filteredStudents =
+    useMemo(() => {
+      const search =
+        studentSearch
+          .trim()
+          .toLocaleLowerCase(
+            'da-DK'
+          );
+
+      if (!search) {
+        return students;
+      }
+
+      return students.filter(
+        (student) => {
+          const firstName =
+            student.first_name
+              .toLocaleLowerCase(
+                'da-DK'
+              );
+
+          const lastName =
+            student.last_name
+              .toLocaleLowerCase(
+                'da-DK'
+              );
+
+          const fullName =
+            `${student.first_name} ${student.last_name}`
+              .toLocaleLowerCase(
+                'da-DK'
+              );
+
+          return (
+            firstName.includes(
+              search
+            ) ||
+            lastName.includes(
+              search
+            ) ||
+            fullName.includes(
+              search
+            )
+          );
+        }
+      );
+    }, [
+      students,
+      studentSearch,
+    ]);
+
+  if (
+    loading &&
+    !schoolClass
+  ) {
     return (
-      <View style={styles.center}>
+      <View
+        style={
+          styles.center
+        }
+      >
         <ActivityIndicator
           size="small"
-          color={COLORS.navy}
+          color={
+            COLORS.navy
+          }
         />
       </View>
     );
@@ -244,7 +321,11 @@ export default function ClassScreen() {
 
   if (!schoolClass) {
     return (
-      <View style={styles.center}>
+      <View
+        style={
+          styles.center
+        }
+      >
         <Text>
           Klassen blev ikke fundet.
         </Text>
@@ -254,29 +335,55 @@ export default function ClassScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={
+        styles.container
+      }
       contentContainerStyle={
         styles.content
       }
       showsVerticalScrollIndicator={
         false
       }
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
     >
       <BackButton />
 
       {/* HEADER */}
 
-      <View style={styles.headerRow}>
-        <View style={styles.header}>
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
+      <View
+        style={
+          styles.headerRow
+        }
+      >
+        <View
+          style={
+            styles.header
+          }
+        >
+          <View
+            style={
+              styles.metaRow
+            }
+          >
+            <View
+              style={
+                styles.metaItem
+              }
+            >
               <Ionicons
                 name="book-outline"
                 size={14}
-                color={COLORS.navy}
+                color={
+                  COLORS.navy
+                }
               />
 
-              <Text style={styles.subject}>
+              <Text
+                style={
+                  styles.subject
+                }
+              >
                 {schoolClass.subject ??
                   'Intet fag'}
               </Text>
@@ -290,21 +397,35 @@ export default function ClassScreen() {
               ·
             </Text>
 
-            <View style={styles.metaItem}>
+            <View
+              style={
+                styles.metaItem
+              }
+            >
               <Ionicons
                 name="calendar-outline"
                 size={14}
-                color={COLORS.navy}
+                color={
+                  COLORS.navy
+                }
               />
 
-              <Text style={styles.eyebrow}>
+              <Text
+                style={
+                  styles.eyebrow
+                }
+              >
                 {schoolClass.school_year ??
                   'Intet skoleår'}
               </Text>
             </View>
           </View>
 
-          <Text style={styles.title}>
+          <Text
+            style={
+              styles.title
+            }
+          >
             {schoolClass.name}
           </Text>
         </View>
@@ -314,12 +435,17 @@ export default function ClassScreen() {
             router.push({
               pathname:
                 '/classes/[id]/settings',
-              params: { id },
+              params: {
+                id,
+              },
             })
           }
           hitSlop={12}
-          style={({ pressed }) => [
+          style={({
+            pressed,
+          }) => [
             styles.settingsButton,
+
             pressed &&
               styles.pressed,
           ]}
@@ -327,68 +453,130 @@ export default function ClassScreen() {
           <Ionicons
             name="settings-outline"
             size={22}
-            color={COLORS.navy}
+            color={
+              COLORS.navy
+            }
           />
         </Pressable>
       </View>
 
       {/* OVERBLIK */}
 
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <View style={styles.statIcon}>
+      <View
+        style={
+          styles.statsRow
+        }
+      >
+        <View
+          style={
+            styles.statCard
+          }
+        >
+          <View
+            style={
+              styles.statIcon
+            }
+          >
             <Ionicons
               name="people-outline"
               size={19}
-              color={COLORS.navy}
+              color={
+                COLORS.navy
+              }
             />
           </View>
 
-          <Text style={styles.statValue}>
+          <Text
+            style={
+              styles.statValue
+            }
+          >
             {students.length}
           </Text>
 
-          <Text style={styles.statLabel}>
+          <Text
+            style={
+              styles.statLabel
+            }
+          >
             Elever
           </Text>
         </View>
 
-        <View style={styles.statCard}>
-          <View style={styles.statIcon}>
+        <View
+          style={
+            styles.statCard
+          }
+        >
+          <View
+            style={
+              styles.statIcon
+            }
+          >
             <Ionicons
               name="checkmark-circle-outline"
               size={19}
-              color={COLORS.navy}
+              color={
+                COLORS.navy
+              }
             />
           </View>
 
-          <Text style={styles.statValue}>
-            {attendancePercentage !== null
+          <Text
+            style={
+              styles.statValue
+            }
+          >
+            {attendancePercentage !==
+            null
               ? `${attendancePercentage}%`
               : '–'}
           </Text>
 
-          <Text style={styles.statLabel}>
+          <Text
+            style={
+              styles.statLabel
+            }
+          >
             Fremmøde
           </Text>
         </View>
 
-        <View style={styles.statCard}>
-          <View style={styles.statIcon}>
+        <View
+          style={
+            styles.statCard
+          }
+        >
+          <View
+            style={
+              styles.statIcon
+            }
+          >
             <Ionicons
               name="remove-circle-outline"
               size={19}
-              color={COLORS.navy}
+              color={
+                COLORS.navy
+              }
             />
           </View>
 
-          <Text style={styles.statValue}>
-            {absencePercentage !== null
+          <Text
+            style={
+              styles.statValue
+            }
+          >
+            {absencePercentage !==
+            null
               ? `${absencePercentage}%`
               : '–'}
           </Text>
 
-          <Text style={styles.statLabel}>
+          <Text
+            style={
+              styles.statLabel
+            }
+          >
             Fravær
           </Text>
         </View>
@@ -401,10 +589,14 @@ export default function ClassScreen() {
           router.push({
             pathname:
               '/classes/[id]/attendance',
-            params: { id },
+            params: {
+              id,
+            },
           })
         }
-        style={({ pressed }) => [
+        style={({
+          pressed,
+        }) => [
           styles.attendanceButton,
 
           pressed &&
@@ -419,7 +611,9 @@ export default function ClassScreen() {
           <Ionicons
             name="clipboard-outline"
             size={20}
-            color={COLORS.white}
+            color={
+              COLORS.white
+            }
           />
 
           <Text
@@ -432,10 +626,26 @@ export default function ClassScreen() {
         </View>
       </Pressable>
 
+      {/* SKILLELINJE */}
+
+      <View
+        style={
+          styles.sectionDivider
+        }
+      />
+
       {/* ELEVER HEADER */}
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>
+      <View
+        style={
+          styles.sectionHeader
+        }
+      >
+        <Text
+          style={
+            styles.sectionTitle
+          }
+        >
           Elever
         </Text>
 
@@ -444,11 +654,16 @@ export default function ClassScreen() {
             router.push({
               pathname:
                 '/classes/[id]/students/create',
-              params: { id },
+              params: {
+                id,
+              },
             })
           }
-          style={({ pressed }) => [
+          style={({
+            pressed,
+          }) => [
             styles.addButton,
+
             pressed &&
               styles.pressed,
           ]}
@@ -456,124 +671,314 @@ export default function ClassScreen() {
           <Ionicons
             name="person-add-outline"
             size={17}
-            color={COLORS.navy}
+            color={
+              COLORS.navy
+            }
           />
 
-          <Text style={styles.addText}>
+          <Text
+            style={
+              styles.addText
+            }
+          >
             Tilføj elev
           </Text>
         </Pressable>
       </View>
 
+      {/* SØG ELEV */}
+
+      {students.length > 0 && (
+        <View
+          style={
+            styles.searchSection
+          }
+        >
+          <View
+            style={
+              styles.searchLabelRow
+            }
+          >
+            <View
+              style={
+                styles.searchLabelIcon
+              }
+            >
+              <Ionicons
+                name="search-outline"
+                size={15}
+                color={
+                  COLORS.navy
+                }
+              />
+            </View>
+
+            <Text
+              style={
+                styles.searchLabel
+              }
+            >
+              Find elev
+            </Text>
+          </View>
+
+          <TextInput
+            value={
+              studentSearch
+            }
+            onChangeText={
+              setStudentSearch
+            }
+            placeholder="Søg efter navn"
+            placeholderTextColor={
+              COLORS.lightMuted
+            }
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="done"
+            style={
+              styles.searchInput
+            }
+          />
+
+          {studentSearch.trim()
+            .length > 0 && (
+            <View
+              style={
+                styles.searchResultRow
+              }
+            >
+              <Text
+                style={
+                  styles.searchResultText
+                }
+              >
+                {
+                  filteredStudents.length
+                }{' '}
+                {filteredStudents.length ===
+                1
+                  ? 'elev fundet'
+                  : 'elever fundet'}
+              </Text>
+
+              <Pressable
+                onPress={() =>
+                  setStudentSearch(
+                    ''
+                  )
+                }
+                hitSlop={8}
+                style={({
+                  pressed,
+                }) => [
+                  styles.clearSearch,
+
+                  pressed &&
+                    styles.pressed,
+                ]}
+              >
+                <Text
+                  style={
+                    styles.clearSearchText
+                  }
+                >
+                  Ryd
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* ELEVER */}
 
       {students.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
+        <View
+          style={
+            styles.emptyState
+          }
+        >
+          <View
+            style={
+              styles.emptyIcon
+            }
+          >
             <Ionicons
               name="people-outline"
               size={27}
-              color={COLORS.navy}
+              color={
+                COLORS.navy
+              }
             />
           </View>
 
-          <Text style={styles.emptyTitle}>
+          <Text
+            style={
+              styles.emptyTitle
+            }
+          >
             Ingen elever endnu
           </Text>
 
-          <Text style={styles.emptyText}>
+          <Text
+            style={
+              styles.emptyText
+            }
+          >
             Tilføj den første elev til
             klassen.
           </Text>
         </View>
+      ) : filteredStudents.length ===
+        0 ? (
+        <View
+          style={
+            styles.emptyState
+          }
+        >
+          <View
+            style={
+              styles.emptyIcon
+            }
+          >
+            <Ionicons
+              name="search-outline"
+              size={27}
+              color={
+                COLORS.navy
+              }
+            />
+          </View>
+
+          <Text
+            style={
+              styles.emptyTitle
+            }
+          >
+            Ingen elever fundet
+          </Text>
+
+          <Text
+            style={
+              styles.emptyText
+            }
+          >
+            Prøv at søge efter et
+            andet navn.
+          </Text>
+        </View>
       ) : (
-        <View style={styles.studentList}>
-          {students.map((student) => {
-            const age = getAge(
-              student.birth_date
-            );
+        <View
+          style={
+            styles.studentList
+          }
+        >
+          {filteredStudents.map(
+            (student) => {
+              const age =
+                getAge(
+                  student.birth_date
+                );
 
-            return (
-              <Pressable
-                key={student.id}
-                onPress={() =>
-                  router.push({
-                    pathname:
-                      '/classes/[id]/students/[studentId]',
-                    params: {
-                      id,
-                      studentId:
-                        student.id,
-                    },
-                  })
-                }
-                style={({ pressed }) => [
-                  styles.studentCard,
-
-                  pressed &&
-                    styles.studentCardPressed,
-                ]}
-              >
-                <View style={styles.avatar}>
-                  <Text
-                    style={
-                      styles.avatarText
-                    }
-                  >
-                    {student.first_name
-                      .charAt(0)
-                      .toUpperCase()}
-                    {student.last_name
-                      .charAt(0)
-                      .toUpperCase()}
-                  </Text>
-                </View>
-
-                <View
-                  style={
-                    styles.studentContent
+              return (
+                <Pressable
+                  key={
+                    student.id
                   }
-                >
-                  <Text
-                    style={
-                      styles.studentName
-                    }
-                  >
-                    {student.first_name}{' '}
-                    {student.last_name}
-                  </Text>
+                  onPress={() =>
+                    router.push({
+                      pathname:
+                        '/classes/[id]/students/[studentId]',
+                      params: {
+                        id,
 
+                        studentId:
+                          student.id,
+                      },
+                    })
+                  }
+                  style={({
+                    pressed,
+                  }) => [
+                    styles.studentCard,
+
+                    pressed &&
+                      styles.studentCardPressed,
+                  ]}
+                >
                   <View
                     style={
-                      styles.studentInfoRow
+                      styles.avatar
                     }
                   >
                     <Text
                       style={
-                        styles.studentInfo
+                        styles.avatarText
                       }
                     >
-                      {age !== null
-                        ? `${age} år`
-                        : 'Alder ikke angivet'}
+                      {student.first_name
+                        .charAt(0)
+                        .toUpperCase()}
+
+                      {student.last_name
+                        .charAt(0)
+                        .toUpperCase()}
                     </Text>
                   </View>
-                </View>
 
-                <View
-                  style={
-                    styles.chevron
-                  }
-                >
-                  <Ionicons
-                    name="chevron-forward"
-                    size={19}
-                    color={COLORS.navy}
-                  />
-                </View>
-              </Pressable>
-            );
-          })}
+                  <View
+                    style={
+                      styles.studentContent
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.studentName
+                      }
+                    >
+                      {
+                        student.first_name
+                      }{' '}
+                      {
+                        student.last_name
+                      }
+                    </Text>
+
+                    <View
+                      style={
+                        styles.studentInfoRow
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.studentInfo
+                        }
+                      >
+                        {age !== null
+                          ? `${age} år`
+                          : 'Alder ikke angivet'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={
+                      styles.chevron
+                    }
+                  >
+                    <Ionicons
+                      name="chevron-forward"
+                      size={19}
+                      color={
+                        COLORS.navy
+                      }
+                    />
+                  </View>
+                </Pressable>
+              );
+            }
+          )}
         </View>
       )}
     </ScrollView>
@@ -587,11 +992,13 @@ function getAge(
     return null;
   }
 
-  const today = new Date();
+  const today =
+    new Date();
 
-  const birth = new Date(
-    `${birthDate}T12:00:00`
-  );
+  const birth =
+    new Date(
+      `${birthDate}T12:00:00`
+    );
 
   let age =
     today.getFullYear() -
@@ -617,21 +1024,27 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+
       backgroundColor:
         COLORS.white,
     },
 
     content: {
       padding: 20,
+
       paddingTop: 70,
       paddingBottom: 50,
     },
 
     center: {
       flex: 1,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
+
       backgroundColor:
         COLORS.white,
     },
@@ -639,77 +1052,113 @@ const styles =
     /* HEADER */
 
     headerRow: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
+
       alignItems:
         'flex-start',
+
       justifyContent:
         'space-between',
+
       marginBottom: 24,
     },
 
     header: {
       flex: 1,
+
       paddingRight: 16,
     },
 
     metaRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flexWrap: 'wrap',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      flexWrap:
+        'wrap',
+
       gap: 6,
+
       marginBottom: 5,
     },
 
     metaItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 4,
     },
 
     eyebrow: {
       fontSize: 14,
-      color: COLORS.muted,
+
+      color:
+        COLORS.muted,
     },
 
     subject: {
       fontSize: 14,
-      fontWeight: '500',
-      color: COLORS.muted,
+
+      fontWeight:
+        '500',
+
+      color:
+        COLORS.muted,
     },
 
     metaSeparator: {
       fontSize: 14,
+
       color:
         COLORS.lightMuted,
     },
 
     title: {
       fontSize: 36,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     settingsButton: {
       width: 42,
       height: 42,
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
+
       marginTop: 2,
     },
 
     /* OVERBLIK */
 
     statsRow: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
+
       gap: 10,
+
       marginBottom: 16,
+
       paddingHorizontal: 2,
       paddingVertical: 4,
     },
 
     statCard: {
       flex: 1,
+
       minHeight: 116,
 
       backgroundColor:
@@ -720,11 +1169,14 @@ const styles =
       paddingVertical: 14,
       paddingHorizontal: 10,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
-      shadowColor: '#000000',
+      shadowColor:
+        '#000000',
 
       shadowOffset: {
         width: 0,
@@ -732,6 +1184,7 @@ const styles =
       },
 
       shadowOpacity: 0.04,
+
       shadowRadius: 14,
 
       elevation: 1,
@@ -740,12 +1193,15 @@ const styles =
     statIcon: {
       width: 34,
       height: 34,
+
       borderRadius: 11,
 
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -754,14 +1210,23 @@ const styles =
 
     statValue: {
       fontSize: 20,
-      fontWeight: '800',
-      color: COLORS.navy,
+
+      fontWeight:
+        '800',
+
+      color:
+        COLORS.navy,
     },
 
     statLabel: {
       fontSize: 11,
-      fontWeight: '600',
-      color: COLORS.muted,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.muted,
+
       marginTop: 3,
     },
 
@@ -769,16 +1234,19 @@ const styles =
 
     attendanceButton: {
       height: 58,
+
       borderRadius: 16,
 
       backgroundColor:
         COLORS.navy,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
-      marginBottom: 32,
+      marginBottom: 18,
 
       shadowColor:
         COLORS.navyDark,
@@ -789,6 +1257,7 @@ const styles =
       },
 
       shadowOpacity: 0.13,
+
       shadowRadius: 12,
 
       elevation: 2,
@@ -806,49 +1275,189 @@ const styles =
     },
 
     attendanceButtonContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 9,
     },
 
     attendanceButtonText: {
-      color: COLORS.white,
+      color:
+        COLORS.white,
+
       fontSize: 16,
-      fontWeight: '700',
+
+      fontWeight:
+        '700',
+    },
+
+    /* DIVIDER */
+
+    sectionDivider: {
+      height: 1,
+
+      backgroundColor:
+        '#EEF0F3',
+
+      marginBottom: 24,
     },
 
     /* ELEVER */
 
     sectionHeader: {
-      flexDirection: 'row',
+      flexDirection:
+        'row',
+
       justifyContent:
         'space-between',
-      alignItems: 'center',
+
+      alignItems:
+        'center',
+
       marginBottom: 14,
     },
 
     sectionTitle: {
       fontSize: 22,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     addButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 5,
+
       paddingVertical: 6,
       paddingLeft: 8,
     },
 
     addText: {
       fontSize: 15,
-      fontWeight: '700',
-      color: COLORS.navy,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.navy,
+    },
+
+    /* SEARCH */
+
+    searchSection: {
+      marginBottom: 18,
+    },
+
+    searchLabelRow: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 7,
+
+      marginBottom: 8,
+    },
+
+    searchLabelIcon: {
+      width: 26,
+      height: 26,
+
+      borderRadius: 8,
+
+      backgroundColor:
+        COLORS.navySoft,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    searchLabel: {
+      fontSize: 13,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.navy,
+    },
+
+    searchInput: {
+      height: 52,
+
+      backgroundColor:
+        COLORS.white,
+
+      borderRadius: 16,
+
+      borderWidth: 1,
+
+      borderColor:
+        '#E5E7EB',
+
+      paddingHorizontal: 18,
+
+      fontSize: 16,
+
+      color:
+        COLORS.text,
+    },
+
+    searchResultRow: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
+      marginTop: 7,
+
+      paddingHorizontal: 2,
+    },
+
+    searchResultText: {
+      fontSize: 11,
+
+      color:
+        COLORS.lightMuted,
+    },
+
+    clearSearch: {
+      paddingHorizontal: 4,
+      paddingVertical: 2,
+    },
+
+    clearSearchText: {
+      fontSize: 11,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.navy,
     },
 
     studentList: {
       gap: 14,
+
       paddingHorizontal: 2,
       paddingVertical: 4,
     },
@@ -858,12 +1467,17 @@ const styles =
         COLORS.white,
 
       borderRadius: 18,
+
       padding: 16,
 
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
 
-      shadowColor: '#000000',
+      alignItems:
+        'center',
+
+      shadowColor:
+        '#000000',
 
       shadowOffset: {
         width: 0,
@@ -871,6 +1485,7 @@ const styles =
       },
 
       shadowOpacity: 0.04,
+
       shadowRadius: 14,
 
       elevation: 1,
@@ -889,12 +1504,15 @@ const styles =
     avatar: {
       width: 46,
       height: 46,
+
       borderRadius: 23,
 
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -903,8 +1521,12 @@ const styles =
 
     avatarText: {
       fontSize: 14,
-      fontWeight: '700',
-      color: COLORS.navy,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.navy,
     },
 
     studentContent: {
@@ -913,31 +1535,45 @@ const styles =
 
     studentName: {
       fontSize: 17,
-      fontWeight: '600',
-      color: COLORS.text,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.text,
     },
 
     studentInfoRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 4,
+
       marginTop: 4,
     },
 
     studentInfo: {
       fontSize: 13,
-      color: COLORS.muted,
+
+      color:
+        COLORS.muted,
     },
 
     chevron: {
       width: 32,
       height: 32,
+
       borderRadius: 16,
 
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -951,11 +1587,14 @@ const styles =
         COLORS.white,
 
       borderRadius: 20,
+
       padding: 28,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
-      shadowColor: '#000000',
+      shadowColor:
+        '#000000',
 
       shadowOffset: {
         width: 0,
@@ -963,6 +1602,7 @@ const styles =
       },
 
       shadowOpacity: 0.04,
+
       shadowRadius: 14,
 
       elevation: 1,
@@ -971,12 +1611,15 @@ const styles =
     emptyIcon: {
       width: 52,
       height: 52,
+
       borderRadius: 16,
 
       backgroundColor:
         COLORS.navySoft,
 
-      alignItems: 'center',
+      alignItems:
+        'center',
+
       justifyContent:
         'center',
 
@@ -985,14 +1628,22 @@ const styles =
 
     emptyTitle: {
       fontSize: 18,
-      fontWeight: '700',
-      color: COLORS.text,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
     },
 
     emptyText: {
-      color: COLORS.muted,
+      color:
+        COLORS.muted,
+
       marginTop: 6,
-      textAlign: 'center',
+
+      textAlign:
+        'center',
     },
 
     pressed: {

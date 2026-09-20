@@ -5,7 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -112,157 +115,182 @@ export default function CreateClassScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <BackButton />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : 'height'
+      }
+    >
+      <ScrollView
+        contentContainerStyle={
+          styles.content
+        }
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={
+          Platform.OS === 'ios'
+            ? 'interactive'
+            : 'on-drag'
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <BackButton />
 
-      <Text style={styles.title}>
-        Opret klasse
-      </Text>
+        <Text style={styles.title}>
+          Opret klasse
+        </Text>
 
-      <View style={styles.form}>
-        {/* KLASSENAVN */}
+        <View style={styles.form}>
+          {/* KLASSENAVN */}
 
-        <View>
-          <View style={styles.labelRow}>
-            <View
-              style={
-                styles.labelIcon
-              }
-            >
-              <Ionicons
-                name="school-outline"
-                size={15}
-                color={COLORS.navy}
-              />
-            </View>
-
-            <Text style={styles.label}>
-              Klassenavn
-            </Text>
-          </View>
-
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="Fx 5.A"
-            placeholderTextColor={
-              COLORS.lightMuted
-            }
-            autoCapitalize="words"
-            autoFocus
-            style={styles.input}
-          />
-        </View>
-
-        {/* FAG */}
-
-        <View>
-          <View style={styles.labelRow}>
-            <View
-              style={
-                styles.labelIcon
-              }
-            >
-              <Ionicons
-                name="book-outline"
-                size={15}
-                color={COLORS.navy}
-              />
-            </View>
-
-            <Text style={styles.label}>
-              Fag
-            </Text>
-          </View>
-
-          <TextInput
-            value={subject}
-            onChangeText={setSubject}
-            placeholder="Fx Matematik"
-            placeholderTextColor={
-              COLORS.lightMuted
-            }
-            autoCapitalize="words"
-            style={styles.input}
-          />
-        </View>
-
-        {/* SKOLEÅR */}
-
-        <View>
-          <View style={styles.labelRow}>
-            <View
-              style={
-                styles.labelIcon
-              }
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={15}
-                color={COLORS.navy}
-              />
-            </View>
-
-            <Text style={styles.label}>
-              Skoleår
-            </Text>
-          </View>
-
-          <TextInput
-            value={schoolYear}
-            onChangeText={setSchoolYear}
-            placeholder="Fx 2026/2027"
-            placeholderTextColor={
-              COLORS.lightMuted
-            }
-            style={styles.input}
-          />
-        </View>
-
-        {/* OPRET */}
-
-        <Pressable
-          onPress={createClass}
-          disabled={loading}
-          style={({ pressed }) => [
-            styles.button,
-
-            pressed &&
-              styles.buttonPressed,
-
-            loading &&
-              styles.disabled,
-          ]}
-        >
-          {loading ? (
-            <ActivityIndicator
-              size="small"
-              color={COLORS.white}
-            />
-          ) : (
-            <View
-              style={
-                styles.buttonContent
-              }
-            >
-              <Ionicons
-                name="add-circle-outline"
-                size={21}
-                color={COLORS.white}
-              />
-
-              <Text
+          <View>
+            <View style={styles.labelRow}>
+              <View
                 style={
-                  styles.buttonText
+                  styles.labelIcon
                 }
               >
-                Opret klasse
+                <Ionicons
+                  name="school-outline"
+                  size={15}
+                  color={COLORS.navy}
+                />
+              </View>
+
+              <Text style={styles.label}>
+                Klassenavn
               </Text>
             </View>
-          )}
-        </Pressable>
-      </View>
-    </View>
+
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="Fx 5.A"
+              placeholderTextColor={
+                COLORS.lightMuted
+              }
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="next"
+              style={styles.input}
+            />
+          </View>
+
+          {/* FAG */}
+
+          <View>
+            <View style={styles.labelRow}>
+              <View
+                style={
+                  styles.labelIcon
+                }
+              >
+                <Ionicons
+                  name="book-outline"
+                  size={15}
+                  color={COLORS.navy}
+                />
+              </View>
+
+              <Text style={styles.label}>
+                Fag
+              </Text>
+            </View>
+
+            <TextInput
+              value={subject}
+              onChangeText={setSubject}
+              placeholder="Fx Matematik"
+              placeholderTextColor={
+                COLORS.lightMuted
+              }
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="next"
+              style={styles.input}
+            />
+          </View>
+
+          {/* SKOLEÅR */}
+
+          <View>
+            <View style={styles.labelRow}>
+              <View
+                style={
+                  styles.labelIcon
+                }
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={15}
+                  color={COLORS.navy}
+                />
+              </View>
+
+              <Text style={styles.label}>
+                Skoleår
+              </Text>
+            </View>
+
+            <TextInput
+              value={schoolYear}
+              onChangeText={setSchoolYear}
+              placeholder="Fx 2026/2027"
+              placeholderTextColor={
+                COLORS.lightMuted
+              }
+              autoCorrect={false}
+              returnKeyType="done"
+              style={styles.input}
+            />
+          </View>
+
+          {/* OPRET */}
+
+          <Pressable
+            onPress={createClass}
+            disabled={loading}
+            style={({ pressed }) => [
+              styles.button,
+
+              pressed &&
+                styles.buttonPressed,
+
+              loading &&
+                styles.disabled,
+            ]}
+          >
+            {loading ? (
+              <ActivityIndicator
+                size="small"
+                color={COLORS.white}
+              />
+            ) : (
+              <View
+                style={
+                  styles.buttonContent
+                }
+              >
+                <Ionicons
+                  name="add-circle-outline"
+                  size={21}
+                  color={COLORS.white}
+                />
+
+                <Text
+                  style={
+                    styles.buttonText
+                  }
+                >
+                  Opret klasse
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -272,14 +300,21 @@ const styles =
       flex: 1,
       backgroundColor:
         COLORS.white,
-      padding: 24,
+    },
+
+    content: {
+      flexGrow: 1,
+
+      paddingHorizontal: 24,
       paddingTop: 80,
+      paddingBottom: 40,
     },
 
     title: {
       fontSize: 34,
       fontWeight: '700',
       color: COLORS.text,
+
       marginTop: 4,
       marginBottom: 32,
     },
@@ -291,6 +326,7 @@ const styles =
     labelRow: {
       flexDirection: 'row',
       alignItems: 'center',
+
       gap: 7,
       marginBottom: 8,
     },
@@ -298,9 +334,12 @@ const styles =
     labelIcon: {
       width: 26,
       height: 26,
+
       borderRadius: 8,
+
       backgroundColor:
         COLORS.navySoft,
+
       alignItems: 'center',
       justifyContent:
         'center',
@@ -309,13 +348,16 @@ const styles =
     label: {
       fontSize: 14,
       fontWeight: '600',
+
       color: COLORS.navy,
     },
 
     input: {
       height: 56,
+
       backgroundColor:
         COLORS.white,
+
       borderRadius: 16,
 
       borderWidth: 1,
@@ -330,8 +372,10 @@ const styles =
 
     button: {
       height: 58,
+
       backgroundColor:
         COLORS.navy,
+
       borderRadius: 16,
 
       alignItems: 'center',
@@ -367,14 +411,17 @@ const styles =
 
     buttonContent: {
       flexDirection: 'row',
+
       alignItems: 'center',
       justifyContent:
         'center',
+
       gap: 8,
     },
 
     buttonText: {
       color: COLORS.white,
+
       fontSize: 16,
       fontWeight: '700',
     },

@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -334,214 +336,230 @@ export default function EditStudentScreen() {
   }
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={styles.container}
-      contentContainerStyle={
-        styles.content
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : 'height'
       }
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
     >
-      <BackButton />
+      <ScrollView
+        contentContainerStyle={
+          styles.content
+        }
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={
+          Platform.OS === 'ios'
+            ? 'interactive'
+            : 'on-drag'
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <BackButton />
 
+        <Text style={styles.title}>
+          Rediger elev
+        </Text>
 
-      <Text style={styles.title}>
-        Rediger elev
-      </Text>
+        {/* FORNAVN */}
 
-      {/* FORNAVN */}
+        <View style={styles.labelRow}>
+          <View style={styles.labelIcon}>
+            <Ionicons
+              name="person-outline"
+              size={15}
+              color={COLORS.navy}
+            />
+          </View>
 
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="person-outline"
-            size={15}
-            color={COLORS.navy}
-          />
+          <Text style={styles.label}>
+            Fornavn
+          </Text>
         </View>
 
-        <Text style={styles.label}>
-          Fornavn
-        </Text>
-      </View>
-
-      <TextInput
-        value={firstName}
-        onChangeText={setFirstName}
-        placeholder="Fornavn"
-        placeholderTextColor={
-          COLORS.lightMuted
-        }
-        autoCapitalize="words"
-        style={styles.input}
-      />
-
-      {/* EFTERNAVN */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="person-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          Efternavn
-        </Text>
-      </View>
-
-      <TextInput
-        value={lastName}
-        onChangeText={setLastName}
-        placeholder="Efternavn"
-        placeholderTextColor={
-          COLORS.lightMuted
-        }
-        autoCapitalize="words"
-        style={styles.input}
-      />
-
-      {/* FØDSELSDATO */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="calendar-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          Fødselsdato
-        </Text>
-      </View>
-
-      <TextInput
-        value={birthDate}
-        onChangeText={
-          handleBirthDateChange
-        }
-        placeholder="01-01-2000"
-        placeholderTextColor={
-          COLORS.lightMuted
-        }
-        keyboardType="number-pad"
-        maxLength={10}
-        style={styles.input}
-      />
-
-      <View style={styles.helperRow}>
-        <Ionicons
-          name="information-circle-outline"
-          size={14}
-          color={COLORS.navy}
+        <TextInput
+          value={firstName}
+          onChangeText={setFirstName}
+          placeholder="Fornavn"
+          placeholderTextColor={
+            COLORS.lightMuted
+          }
+          autoCapitalize="words"
+          autoCorrect={false}
+          returnKeyType="next"
+          style={styles.input}
         />
 
-        <Text style={styles.helper}>
-          Format: DD-MM-ÅÅÅÅ
-        </Text>
-      </View>
+        {/* EFTERNAVN */}
 
-      {/* TELEFON */}
+        <View style={styles.labelRow}>
+          <View style={styles.labelIcon}>
+            <Ionicons
+              name="person-outline"
+              size={15}
+              color={COLORS.navy}
+            />
+          </View>
 
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="call-outline"
-            size={15}
-            color={COLORS.navy}
-          />
+          <Text style={styles.label}>
+            Efternavn
+          </Text>
         </View>
 
-        <Text style={styles.label}>
-          Telefon
-        </Text>
-      </View>
+        <TextInput
+          value={lastName}
+          onChangeText={setLastName}
+          placeholder="Efternavn"
+          placeholderTextColor={
+            COLORS.lightMuted
+          }
+          autoCapitalize="words"
+          autoCorrect={false}
+          returnKeyType="next"
+          style={styles.input}
+        />
 
-      <TextInput
-        value={phone}
-        onChangeText={setPhone}
-        placeholder="+45 12 34 56 78"
-        placeholderTextColor={
-          COLORS.lightMuted
-        }
-        keyboardType="phone-pad"
-        style={styles.input}
-      />
+        {/* FØDSELSDATO */}
 
-      {/* GEM */}
-
-      <Pressable
-        onPress={saveStudent}
-        disabled={saving}
-        style={({ pressed }) => [
-          styles.saveButton,
-
-          pressed &&
-            styles.saveButtonPressed,
-
-          saving &&
-            styles.disabled,
-        ]}
-      >
-        {saving ? (
-          <ActivityIndicator
-            size="small"
-            color={COLORS.white}
-          />
-        ) : (
-          <View
-            style={
-              styles.buttonContent
-            }
-          >
+        <View style={styles.labelRow}>
+          <View style={styles.labelIcon}>
             <Ionicons
-              name="checkmark-circle-outline"
-              size={20}
+              name="calendar-outline"
+              size={15}
+              color={COLORS.navy}
+            />
+          </View>
+
+          <Text style={styles.label}>
+            Fødselsdato
+          </Text>
+        </View>
+
+        <TextInput
+          value={birthDate}
+          onChangeText={
+            handleBirthDateChange
+          }
+          placeholder="01-01-2000"
+          placeholderTextColor={
+            COLORS.lightMuted
+          }
+          keyboardType="number-pad"
+          maxLength={10}
+          style={styles.input}
+        />
+
+        <View style={styles.helperRow}>
+          <Ionicons
+            name="information-circle-outline"
+            size={14}
+            color={COLORS.navy}
+          />
+
+          <Text style={styles.helper}>
+            Format: DD-MM-ÅÅÅÅ
+          </Text>
+        </View>
+
+        {/* TELEFON */}
+
+        <View style={styles.labelRow}>
+          <View style={styles.labelIcon}>
+            <Ionicons
+              name="call-outline"
+              size={15}
+              color={COLORS.navy}
+            />
+          </View>
+
+          <Text style={styles.label}>
+            Telefon
+          </Text>
+        </View>
+
+        <TextInput
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="+45 12 34 56 78"
+          placeholderTextColor={
+            COLORS.lightMuted
+          }
+          keyboardType="phone-pad"
+          style={styles.input}
+        />
+
+        {/* GEM */}
+
+        <Pressable
+          onPress={saveStudent}
+          disabled={saving}
+          style={({ pressed }) => [
+            styles.saveButton,
+
+            pressed &&
+              styles.saveButtonPressed,
+
+            saving &&
+              styles.disabled,
+          ]}
+        >
+          {saving ? (
+            <ActivityIndicator
+              size="small"
               color={COLORS.white}
             />
-
-            <Text
+          ) : (
+            <View
               style={
-                styles.saveButtonText
+                styles.buttonContent
               }
             >
-              Gem ændringer
-            </Text>
-          </View>
-        )}
-      </Pressable>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={20}
+                color={COLORS.white}
+              />
 
-      {/* FJERN ELEV */}
+              <Text
+                style={
+                  styles.saveButtonText
+                }
+              >
+                Gem ændringer
+              </Text>
+            </View>
+          )}
+        </Pressable>
 
-      <Pressable
-        onPress={deactivateStudent}
-        disabled={saving}
-        style={({ pressed }) => [
-          styles.deleteButton,
+        {/* FJERN ELEV */}
 
-          pressed &&
-            styles.pressed,
-        ]}
-      >
-        <Ionicons
-          name="person-remove-outline"
-          size={18}
-          color="#DC2626"
-        />
+        <Pressable
+          onPress={deactivateStudent}
+          disabled={saving}
+          style={({ pressed }) => [
+            styles.deleteButton,
 
-        <Text
-          style={
-            styles.deleteButtonText
-          }
+            pressed &&
+              styles.pressed,
+          ]}
         >
-          Fjern elev fra klassen
-        </Text>
-      </Pressable>
-    </ScrollView>
+          <Ionicons
+            name="person-remove-outline"
+            size={18}
+            color="#DC2626"
+          />
+
+          <Text
+            style={
+              styles.deleteButtonText
+            }
+          >
+            Fjern elev fra klassen
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -651,6 +669,8 @@ const styles =
     },
 
     content: {
+      flexGrow: 1,
+
       padding: 20,
       paddingTop: 70,
       paddingBottom: 50,
@@ -658,9 +678,11 @@ const styles =
 
     center: {
       flex: 1,
+
       alignItems: 'center',
       justifyContent:
         'center',
+
       backgroundColor:
         COLORS.white,
     },
@@ -673,7 +695,9 @@ const styles =
     title: {
       fontSize: 34,
       fontWeight: '700',
+
       color: COLORS.text,
+
       marginTop: 4,
       marginBottom: 28,
     },
@@ -681,13 +705,16 @@ const styles =
     labelRow: {
       flexDirection: 'row',
       alignItems: 'center',
+
       gap: 7,
+
       marginBottom: 7,
     },
 
     labelIcon: {
       width: 26,
       height: 26,
+
       borderRadius: 8,
 
       backgroundColor:
@@ -701,6 +728,7 @@ const styles =
     label: {
       fontSize: 13,
       fontWeight: '600',
+
       color: COLORS.navy,
     },
 
@@ -726,6 +754,7 @@ const styles =
     helperRow: {
       flexDirection: 'row',
       alignItems: 'center',
+
       gap: 4,
 
       marginTop: -10,
@@ -735,12 +764,14 @@ const styles =
 
     helper: {
       fontSize: 12,
+
       color:
         COLORS.lightMuted,
     },
 
     saveButton: {
       height: 56,
+
       borderRadius: 16,
 
       backgroundColor:
@@ -779,14 +810,17 @@ const styles =
 
     buttonContent: {
       flexDirection: 'row',
+
       alignItems: 'center',
       justifyContent:
         'center',
+
       gap: 8,
     },
 
     saveButtonText: {
       color: COLORS.white,
+
       fontSize: 16,
       fontWeight: '700',
     },
@@ -796,6 +830,7 @@ const styles =
       minHeight: 48,
 
       flexDirection: 'row',
+
       alignItems: 'center',
       justifyContent:
         'center',
@@ -806,6 +841,7 @@ const styles =
     deleteButtonText: {
       fontSize: 15,
       fontWeight: '600',
+
       color: '#DC2626',
     },
 

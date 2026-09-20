@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -155,200 +157,217 @@ export default function CreateStudentScreen() {
   }
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={styles.container}
-      contentContainerStyle={
-        styles.content
-      }
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={
-        false
+      behavior={
+        Platform.OS === 'ios'
+          ? 'padding'
+          : 'height'
       }
     >
-      <BackButton />
-
-      {/* HEADER */}
-
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          Tilføj elev
-        </Text>
-      </View>
-
-      {/* FORNAVN */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="person-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          Fornavn *
-        </Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          value={firstName}
-          onChangeText={setFirstName}
-          placeholder="Emma"
-          placeholderTextColor={
-            COLORS.lightMuted
-          }
-          autoCapitalize="words"
-          style={styles.input}
-        />
-      </View>
-
-      {/* EFTERNAVN */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="person-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          Efternavn *
-        </Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          value={lastName}
-          onChangeText={setLastName}
-          placeholder="Jensen"
-          placeholderTextColor={
-            COLORS.lightMuted
-          }
-          autoCapitalize="words"
-          style={styles.input}
-        />
-      </View>
-
-      {/* FØDSELSDATO */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="calendar-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          Fødselsdato
-        </Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          value={birthDate}
-          onChangeText={
-            handleBirthDateChange
-          }
-          placeholder="01-01-2000"
-          placeholderTextColor={
-            COLORS.lightMuted
-          }
-          keyboardType="number-pad"
-          maxLength={10}
-          style={styles.input}
-        />
-      </View>
-
-      <View style={styles.helpRow}>
-        <Ionicons
-          name="information-circle-outline"
-          size={14}
-          color={COLORS.navy}
-        />
-
-        <Text style={styles.help}>
-          Format: DD-MM-ÅÅÅÅ
-        </Text>
-      </View>
-
-      {/* TELEFON */}
-
-      <View style={styles.labelRow}>
-        <View style={styles.labelIcon}>
-          <Ionicons
-            name="call-outline"
-            size={15}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.label}>
-          Telefonnummer
-        </Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="+45 12 34 56 78"
-          placeholderTextColor={
-            COLORS.lightMuted
-          }
-          keyboardType="phone-pad"
-          style={styles.input}
-        />
-      </View>
-
-      {/* OPRET */}
-
-      <Pressable
-        onPress={createStudent}
-        disabled={loading}
-        style={({ pressed }) => [
-          styles.button,
-
-          pressed &&
-            styles.buttonPressed,
-
-          loading &&
-            styles.disabled,
-        ]}
+      <ScrollView
+        contentContainerStyle={
+          styles.content
+        }
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={
+          Platform.OS === 'ios'
+            ? 'interactive'
+            : 'on-drag'
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
-        {loading ? (
-          <ActivityIndicator
-            size="small"
-            color={COLORS.white}
-          />
-        ) : (
-          <View
-            style={
-              styles.buttonContent
-            }
-          >
+        <BackButton />
+
+        {/* HEADER */}
+
+        <View style={styles.header}>
+          <Text style={styles.title}>
+            Tilføj elev
+          </Text>
+        </View>
+
+        {/* FORNAVN */}
+
+        <View style={styles.labelRow}>
+          <View style={styles.labelIcon}>
             <Ionicons
-              name="person-add-outline"
-              size={20}
+              name="person-outline"
+              size={15}
+              color={COLORS.navy}
+            />
+          </View>
+
+          <Text style={styles.label}>
+            Fornavn *
+          </Text>
+        </View>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={firstName}
+            onChangeText={setFirstName}
+            placeholder="Emma"
+            placeholderTextColor={
+              COLORS.lightMuted
+            }
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="next"
+            style={styles.input}
+          />
+        </View>
+
+        {/* EFTERNAVN */}
+
+        <View style={styles.labelRow}>
+          <View style={styles.labelIcon}>
+            <Ionicons
+              name="person-outline"
+              size={15}
+              color={COLORS.navy}
+            />
+          </View>
+
+          <Text style={styles.label}>
+            Efternavn *
+          </Text>
+        </View>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={lastName}
+            onChangeText={setLastName}
+            placeholder="Jensen"
+            placeholderTextColor={
+              COLORS.lightMuted
+            }
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="next"
+            style={styles.input}
+          />
+        </View>
+
+        {/* FØDSELSDATO */}
+
+        <View style={styles.labelRow}>
+          <View style={styles.labelIcon}>
+            <Ionicons
+              name="calendar-outline"
+              size={15}
+              color={COLORS.navy}
+            />
+          </View>
+
+          <Text style={styles.label}>
+            Fødselsdato
+          </Text>
+        </View>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={birthDate}
+            onChangeText={
+              handleBirthDateChange
+            }
+            placeholder="01-01-2000"
+            placeholderTextColor={
+              COLORS.lightMuted
+            }
+            keyboardType="number-pad"
+            maxLength={10}
+            style={styles.input}
+          />
+        </View>
+
+        <View style={styles.helpRow}>
+          <Ionicons
+            name="information-circle-outline"
+            size={14}
+            color={COLORS.navy}
+          />
+
+          <Text style={styles.help}>
+            Format: DD-MM-ÅÅÅÅ
+          </Text>
+        </View>
+
+        {/* TELEFON */}
+
+        <View style={styles.labelRow}>
+          <View style={styles.labelIcon}>
+            <Ionicons
+              name="call-outline"
+              size={15}
+              color={COLORS.navy}
+            />
+          </View>
+
+          <Text style={styles.label}>
+            Telefonnummer
+          </Text>
+        </View>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="+45 12 34 56 78"
+            placeholderTextColor={
+              COLORS.lightMuted
+            }
+            keyboardType="phone-pad"
+            style={styles.input}
+          />
+        </View>
+
+        {/* OPRET */}
+
+        <Pressable
+          onPress={createStudent}
+          disabled={loading}
+          style={({ pressed }) => [
+            styles.button,
+
+            pressed &&
+              styles.buttonPressed,
+
+            loading &&
+              styles.disabled,
+          ]}
+        >
+          {loading ? (
+            <ActivityIndicator
+              size="small"
               color={COLORS.white}
             />
-
-            <Text
+          ) : (
+            <View
               style={
-                styles.buttonText
+                styles.buttonContent
               }
             >
-              Tilføj elev
-            </Text>
-          </View>
-        )}
-      </Pressable>
-    </ScrollView>
+              <Ionicons
+                name="person-add-outline"
+                size={20}
+                color={COLORS.white}
+              />
+
+              <Text
+                style={
+                  styles.buttonText
+                }
+              >
+                Tilføj elev
+              </Text>
+            </View>
+          )}
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -436,11 +455,14 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+
       backgroundColor:
         COLORS.white,
     },
 
     content: {
+      flexGrow: 1,
+
       padding: 24,
       paddingTop: 70,
       paddingBottom: 50,
@@ -453,14 +475,18 @@ const styles =
     title: {
       fontSize: 34,
       fontWeight: '700',
+
       color: COLORS.text,
+
       marginTop: 2,
     },
 
     labelRow: {
       flexDirection: 'row',
       alignItems: 'center',
+
       gap: 7,
+
       marginBottom: 8,
       marginTop: 14,
     },
@@ -468,6 +494,7 @@ const styles =
     labelIcon: {
       width: 26,
       height: 26,
+
       borderRadius: 8,
 
       backgroundColor:
@@ -481,11 +508,13 @@ const styles =
     label: {
       fontSize: 14,
       fontWeight: '600',
+
       color: COLORS.navy,
     },
 
     inputContainer: {
       height: 56,
+
       borderRadius: 16,
 
       backgroundColor:
@@ -503,15 +532,20 @@ const styles =
 
     input: {
       flex: 1,
+
       height: '100%',
+
       fontSize: 16,
+
       color: COLORS.text,
     },
 
     helpRow: {
       flexDirection: 'row',
       alignItems: 'center',
+
       gap: 5,
+
       marginTop: 7,
       marginLeft: 2,
     },
@@ -519,11 +553,13 @@ const styles =
     help: {
       color:
         COLORS.lightMuted,
+
       fontSize: 13,
     },
 
     button: {
       height: 58,
+
       borderRadius: 16,
 
       backgroundColor:
@@ -562,14 +598,17 @@ const styles =
 
     buttonContent: {
       flexDirection: 'row',
+
       alignItems: 'center',
       justifyContent:
         'center',
+
       gap: 8,
     },
 
     buttonText: {
       color: COLORS.white,
+
       fontWeight: '700',
       fontSize: 16,
     },
