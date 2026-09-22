@@ -1,12 +1,9 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useState } from 'react';
 
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,8 +15,11 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
+
+import {
+  router,
+  useLocalSearchParams,
+} from 'expo-router';
 
 import { supabase } from '@/lib/supabase';
 
@@ -32,36 +32,39 @@ const COLORS = {
   muted: '#6B7280',
   lightMuted: '#9CA3AF',
 
+  danger: '#DC2626',
+  dangerDark: '#B91C1C',
+  dangerSoft: '#FEF2F2',
+
   white: '#FFFFFF',
 };
 
+type Step = 'code' | 'password';
+
 export default function ResetPasswordScreen() {
-  const url = Linking.useURL();
+  const params =
+    useLocalSearchParams<{
+      email?: string | string[];
+    }>();
 
-  const processedUrl =
-    useRef<string | null>(null);
+  const emailParam =
+    Array.isArray(params.email)
+      ? params.email[0]
+      : params.email;
 
-  const [
-    checking,
-    setChecking,
-  ] = useState(true);
+  const email =
+    emailParam
+      ?.trim()
+      .toLowerCase() ?? '';
 
-  const [
-    recoveryReady,
-    setRecoveryReady,
-  ] = useState(false);
+  const [step, setStep] =
+    useState<Step>('code');
 
-  const [
-    linkError,
-    setLinkError,
-  ] = useState<string | null>(
-    null
-  );
+  const [code, setCode] =
+    useState('');
 
-  const [
-    password,
-    setPassword,
-  ] = useState('');
+  const [password, setPassword] =
+    useState('');
 
   const [
     confirmPassword,
@@ -79,273 +82,157 @@ export default function ResetPasswordScreen() {
   ] = useState(false);
 
   const [
-    saving,
-    setSaving,
+    verifying,
+    setVerifying,
   ] = useState(false);
 
-  useEffect(() => {
-    void initializeRecovery();
+  const [
+    resending,
+    setResending,
+  ] = useState(false);
 
-    const {
-      data: { subscription },
-    } =
-      supabase.auth.onAuthStateChange(
-        (event, session) => {
-          if (
-            event ===
-              'PASSWORD_RECOVERY' &&
-            session
-          ) {
-            setRecoveryReady(true);
-            setLinkError(null);
-            setChecking(false);
-          }
-        }
+  const [saving, setSaving] =
+    useState(false);
+
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] = useState<string | null>(
+    null
+  );
+
+  async function verifyCode() {
+    const cleanedCode =
+      code.trim();
+
+    if (!email) {
+      setErrorMessage(
+        'E-mailadressen mangler. Gå tilbage og bed om en ny kode.'
       );
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!url) {
       return;
     }
 
-    if (
-      processedUrl.current === url
-    ) {
+    if (!cleanedCode) {
+      setErrorMessage(
+        'Indtast koden fra mailen.'
+      );
+
       return;
     }
 
-    processedUrl.current = url;
-
-    if (
-      hasRecoveryParameters(url)
-    ) {
-      void handleRecoveryUrl(url);
-    }
-  }, [url]);
-
-  async function initializeRecovery() {
     try {
-      setChecking(true);
-      setLinkError(null);
+      setVerifying(true);
+      setErrorMessage(null);
 
-      /*
-       * VIGTIGT:
-       *
-       * Hvis brugeren reloader siden efter
-       * recovery-linket allerede er blevet
-       * behandlet, ligger recovery-sessionen
-       * stadig i Supabase.
-       *
-       * Så skal vi IKKE kræve tokens i URL'en
-       * igen.
-       */
-
-      const {
-        data: { session },
-        error,
-      } =
-        await supabase.auth.getSession();
+      const { error } =
+        await supabase.auth.verifyOtp({
+          email,
+          token: cleanedCode,
+          type: 'recovery',
+        });
 
       if (error) {
         throw error;
       }
 
-      if (session) {
-        setRecoveryReady(true);
+      setStep('password');
+    } catch (error: any) {
+      console.error(
+        'Kunne ikke verificere recovery-kode:',
+        error
+      );
+
+      const message =
+        error?.message
+          ?.toLowerCase()
+          ?.trim() ?? '';
+
+      if (
+        message.includes('expired') ||
+        message.includes('invalid')
+      ) {
+        setErrorMessage(
+          'Koden er ugyldig eller udløbet. Kontrollér koden eller send en ny.'
+        );
+
         return;
       }
 
-      /*
-       * Hvis der endnu ikke findes en session,
-       * prøver vi initial URL.
-       */
+      setErrorMessage(
+        'Koden kunne ikke bekræftes. Prøv igen.'
+      );
+    } finally {
+      setVerifying(false);
+    }
+  }
 
-      const initialUrl =
-        await Linking.getInitialURL();
+  async function resendCode() {
+    if (!email) {
+      setErrorMessage(
+        'E-mailadressen mangler. Gå tilbage og bed om en ny kode.'
+      );
+
+      return;
+    }
+
+    try {
+      setResending(true);
+      setErrorMessage(null);
+
+      const { error } =
+        await supabase.auth.resetPasswordForEmail(
+          email
+        );
+
+      if (error) {
+        throw error;
+      }
+
+      setCode('');
+
+      Alert.alert(
+        'Ny kode sendt',
+        `Vi har sendt en ny kode til ${email}. Tjek også din spam-mappe, hvis du ikke kan finde mailen.`
+      );
+    } catch (error: any) {
+      console.error(
+        'Kunne ikke sende ny kode:',
+        error
+      );
+
+      const message =
+        error?.message
+          ?.toLowerCase()
+          ?.trim() ?? '';
 
       if (
-        initialUrl &&
-        hasRecoveryParameters(
-          initialUrl
+        message.includes(
+          'email rate limit exceeded'
         )
       ) {
-        processedUrl.current =
-          initialUrl;
-
-        await handleRecoveryUrl(
-          initialUrl
+        setErrorMessage(
+          'Der er sendt for mange mails på kort tid. Vent lidt og prøv igen.'
         );
 
         return;
       }
 
-      /*
-       * Ingen session og intet recovery-link.
-       */
-
-      setLinkError(
-        'Reset-linket er ugyldigt eller udløbet. Bed om et nyt link fra login-siden.'
-      );
-    } catch (error) {
-      console.error(
-        'Kunne ikke kontrollere reset-session:',
-        error
-      );
-
-      setLinkError(
-        'Reset-linket kunne ikke kontrolleres. Bed om et nyt link fra login-siden.'
+      setErrorMessage(
+        'En ny kode kunne ikke sendes. Prøv igen om lidt.'
       );
     } finally {
-      setChecking(false);
+      setResending(false);
     }
   }
 
-  async function handleRecoveryUrl(
-    recoveryUrl: string
-  ) {
-    try {
-      setChecking(true);
-      setLinkError(null);
-
-      const errorDescription =
-        getUrlParameter(
-          recoveryUrl,
-          'error_description'
-        );
-
-      if (errorDescription) {
-        throw new Error(
-          errorDescription
-        );
-      }
-
-      /*
-       * PKCE FLOW
-       */
-
-      const code =
-        getUrlParameter(
-          recoveryUrl,
-          'code'
-        );
-
-      if (code) {
-        const { error } =
-          await supabase.auth.exchangeCodeForSession(
-            code
-          );
-
-        if (error) {
-          throw error;
-        }
-
-        setRecoveryReady(true);
-
-        return;
-      }
-
-      /*
-       * IMPLICIT FLOW
-       */
-
-      const accessToken =
-        getUrlParameter(
-          recoveryUrl,
-          'access_token'
-        );
-
-      const refreshToken =
-        getUrlParameter(
-          recoveryUrl,
-          'refresh_token'
-        );
-
-      if (
-        accessToken &&
-        refreshToken
-      ) {
-        const { error } =
-          await supabase.auth.setSession({
-            access_token:
-              accessToken,
-
-            refresh_token:
-              refreshToken,
-          });
-
-        if (error) {
-          throw error;
-        }
-
-        setRecoveryReady(true);
-
-        return;
-      }
-
-      /*
-       * Hvis URL'en ikke længere har tokens,
-       * kan sessionen allerede være blevet
-       * gemt.
-       */
-
-      const {
-        data: { session },
-      } =
-        await supabase.auth.getSession();
-
-      if (session) {
-        setRecoveryReady(true);
-
-        return;
-      }
-
-      throw new Error(
-        'Reset-linket indeholder ikke en gyldig recovery-session.'
-      );
-    } catch (error) {
-      console.error(
-        'Kunne ikke behandle reset-link:',
-        error
-      );
-
-      const {
-        data: { session },
-      } =
-        await supabase.auth.getSession();
-
-      /*
-       * Et PKCE-code kan kun bruges én gang.
-       *
-       * Ved reload kan exchange derfor fejle,
-       * selvom sessionen allerede er oprettet.
-       */
-
-      if (session) {
-        setRecoveryReady(true);
-        setLinkError(null);
-
-        return;
-      }
-
-      setRecoveryReady(false);
-
-      setLinkError(
-        'Reset-linket er ugyldigt eller udløbet. Bed om et nyt link fra login-siden.'
-      );
-    } finally {
-      setChecking(false);
-    }
+  function goBackToLogin() {
+    router.dismissTo('/login');
   }
 
-  async function handleUpdatePassword() {
+  async function updatePassword() {
     if (password.length < 8) {
-      Alert.alert(
-        'Adgangskoden er for kort',
+      setErrorMessage(
         'Adgangskoden skal være mindst 8 tegn.'
       );
 
@@ -356,9 +243,8 @@ export default function ResetPasswordScreen() {
       password !==
       confirmPassword
     ) {
-      Alert.alert(
-        'Adgangskoderne er forskellige',
-        'De to adgangskoder skal være ens.'
+      setErrorMessage(
+        'De to adgangskoder er ikke ens.'
       );
 
       return;
@@ -366,6 +252,7 @@ export default function ResetPasswordScreen() {
 
     try {
       setSaving(true);
+      setErrorMessage(null);
 
       const { error } =
         await supabase.auth.updateUser({
@@ -375,12 +262,6 @@ export default function ResetPasswordScreen() {
       if (error) {
         throw error;
       }
-
-      /*
-       * Log ud efter ændringen,
-       * så brugeren logger ind igen
-       * med sin nye adgangskode.
-       */
 
       const {
         error: signOutError,
@@ -396,15 +277,11 @@ export default function ResetPasswordScreen() {
 
       Alert.alert(
         'Adgangskode ændret',
-        'Din adgangskode er blevet ændret. Du kan nu logge ind med din nye adgangskode.',
+        'Din adgangskode er blevet ændret. Du kan nu logge ind med den nye adgangskode.',
         [
           {
             text: 'Log ind',
-
-            onPress: () =>
-              router.replace(
-                '/login'
-              ),
+            onPress: goBackToLogin,
           },
         ]
       );
@@ -414,105 +291,18 @@ export default function ResetPasswordScreen() {
         error
       );
 
-      Alert.alert(
-        'Kunne ikke ændre adgangskode',
-        'Reset-sessionen kan være udløbet. Prøv eventuelt at bede om et nyt link.'
+      setErrorMessage(
+        'Adgangskoden kunne ikke ændres. Prøv igen.'
       );
     } finally {
       setSaving(false);
     }
   }
 
-  if (checking) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator
-          size="small"
-          color={COLORS.navy}
-        />
-
-        <Text style={styles.loadingText}>
-          Kontrollerer reset-link...
-        </Text>
-      </View>
-    );
-  }
-
-  if (
-    linkError ||
-    !recoveryReady
-  ) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.errorContainer}>
-          <View style={styles.errorIcon}>
-            <Ionicons
-              name="alert-circle-outline"
-              size={32}
-              color={COLORS.navy}
-            />
-          </View>
-
-          <Text style={styles.errorTitle}>
-            Linket virker ikke
-          </Text>
-
-          <Text
-            style={
-              styles.errorDescription
-            }
-          >
-            {linkError ??
-              'Reset-linket kunne ikke læses.'}
-          </Text>
-
-          <Pressable
-            onPress={() =>
-              router.replace(
-                '/forgot-password'
-              )
-            }
-            style={({ pressed }) => [
-              styles.primaryButton,
-
-              pressed &&
-                styles.primaryButtonPressed,
-            ]}
-          >
-            <Text
-              style={
-                styles.primaryButtonText
-              }
-            >
-              Send et nyt link
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() =>
-              router.replace(
-                '/login'
-              )
-            }
-            style={({ pressed }) => [
-              styles.secondaryButton,
-
-              pressed &&
-                styles.secondaryButtonPressed,
-            ]}
-          >
-            <Text
-              style={
-                styles.secondaryButtonText
-              }
-            >
-              Tilbage til login
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
+  const busy =
+    verifying ||
+    resending ||
+    saving;
 
   return (
     <KeyboardAvoidingView
@@ -525,7 +315,7 @@ export default function ResetPasswordScreen() {
     >
       <ScrollView
         contentContainerStyle={
-          styles.content
+          styles.scrollContent
         }
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={
@@ -533,318 +323,490 @@ export default function ResetPasswordScreen() {
             ? 'interactive'
             : 'on-drag'
         }
-        showsVerticalScrollIndicator={
-          false
-        }
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerIcon}>
-          <Ionicons
-            name="lock-closed-outline"
-            size={27}
-            color={COLORS.navy}
-          />
-        </View>
+        {/* HEADER */}
 
-        <Text style={styles.title}>
-          Ny adgangskode
-        </Text>
-
-        <Text style={styles.subtitle}>
-          Vælg en ny adgangskode til
-          din ProtoGo-konto.
-        </Text>
-
-        {/* PASSWORD */}
-
-        <View style={styles.fieldHeader}>
-          <View
-            style={
-              styles.smallIconBox
-            }
-          >
-            <Ionicons
-              name="lock-closed-outline"
-              size={16}
-              color={COLORS.navy}
-            />
-          </View>
-
-          <Text style={styles.fieldLabel}>
-            Ny adgangskode
-          </Text>
-        </View>
-
-        <View
-          style={
-            styles.passwordContainer
-          }
-        >
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Mindst 8 tegn"
-            placeholderTextColor={
-              COLORS.lightMuted
-            }
-            secureTextEntry={
-              !showPassword
-            }
-            autoCapitalize="none"
-            autoCorrect={false}
-            textContentType="newPassword"
-            returnKeyType="next"
-            editable={!saving}
-            style={
-              styles.passwordInput
-            }
+        <View style={styles.header}>
+          <Image
+            source={require('../assets/images/protogo-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
           />
 
-          <Pressable
-            onPress={() =>
-              setShowPassword(
-                (current) =>
-                  !current
-              )
-            }
-            hitSlop={8}
-            style={
-              styles.eyeButton
-            }
-          >
-            <Ionicons
-              name={
-                showPassword
-                  ? 'eye-off-outline'
-                  : 'eye-outline'
-              }
-              size={20}
-              color={
-                COLORS.muted
-              }
-            />
-          </Pressable>
-        </View>
-
-        {/* CONFIRM PASSWORD */}
-
-        <View
-          style={[
-            styles.fieldHeader,
-            styles.secondField,
-          ]}
-        >
-          <View
-            style={
-              styles.smallIconBox
-            }
-          >
-            <Ionicons
-              name="shield-checkmark-outline"
-              size={16}
-              color={COLORS.navy}
-            />
-          </View>
-
-          <Text style={styles.fieldLabel}>
-            Gentag adgangskode
-          </Text>
-        </View>
-
-        <View
-          style={
-            styles.passwordContainer
-          }
-        >
-          <TextInput
-            value={
-              confirmPassword
-            }
-            onChangeText={
-              setConfirmPassword
-            }
-            placeholder="Gentag adgangskoden"
-            placeholderTextColor={
-              COLORS.lightMuted
-            }
-            secureTextEntry={
-              !showConfirmPassword
-            }
-            autoCapitalize="none"
-            autoCorrect={false}
-            textContentType="newPassword"
-            returnKeyType="done"
-            editable={!saving}
-            style={
-              styles.passwordInput
-            }
-          />
-
-          <Pressable
-            onPress={() =>
-              setShowConfirmPassword(
-                (current) =>
-                  !current
-              )
-            }
-            hitSlop={8}
-            style={
-              styles.eyeButton
-            }
-          >
-            <Ionicons
-              name={
-                showConfirmPassword
-                  ? 'eye-off-outline'
-                  : 'eye-outline'
-              }
-              size={20}
-              color={
-                COLORS.muted
-              }
-            />
-          </Pressable>
-        </View>
-
-        <View style={styles.infoBox}>
-          <Ionicons
-            name="information-circle-outline"
-            size={19}
-            color={COLORS.navy}
-          />
-
-          <Text style={styles.infoText}>
-            Din nye adgangskode skal
-            være mindst 8 tegn.
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={
-            handleUpdatePassword
-          }
-          disabled={saving}
-          style={({ pressed }) => [
-            styles.primaryButton,
-
-            pressed &&
-              !saving &&
-              styles.primaryButtonPressed,
-
-            saving &&
-              styles.disabled,
-          ]}
-        >
-          {saving ? (
-            <ActivityIndicator
-              size="small"
-              color={COLORS.white}
-            />
-          ) : (
-            <View
-              style={
-                styles.buttonContent
-              }
-            >
-              <Ionicons
-                name="checkmark-outline"
-                size={20}
-                color={COLORS.white}
-              />
+          {step === 'code' ? (
+            <>
+              <Text style={styles.title}>
+                Indtast din kode
+              </Text>
 
               <Text
-                style={
-                  styles.primaryButtonText
-                }
+                style={styles.subtitle}
               >
-                Gem ny adgangskode
+                Vi har sendt en kode til{' '}
+                {email ||
+                  'din e-mailadresse'}
+                . Indtast koden for at
+                fortsætte.
               </Text>
-            </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.title}>
+                Ny adgangskode
+              </Text>
+
+              <Text
+                style={styles.subtitle}
+              >
+                Koden er bekræftet. Vælg
+                nu en ny adgangskode til
+                din ProtoGo-konto.
+              </Text>
+            </>
           )}
-        </Pressable>
+        </View>
+
+        {/* FORM */}
+
+        <View style={styles.form}>
+          {step === 'code' ? (
+            <>
+              {/* CODE */}
+
+              <View style={styles.field}>
+                <View
+                  style={styles.labelRow}
+                >
+                  <View
+                    style={
+                      styles.labelIcon
+                    }
+                  >
+                    <Ionicons
+                      name="keypad-outline"
+                      size={15}
+                      color={
+                        COLORS.navy
+                      }
+                    />
+                  </View>
+
+                  <Text
+                    style={styles.label}
+                  >
+                    Kode
+                  </Text>
+                </View>
+
+                <TextInput
+                  value={code}
+                  onChangeText={(value) => {
+                    setCode(
+                      value.replace(
+                        /\D/g,
+                        ''
+                      )
+                    );
+
+                    if (errorMessage) {
+                      setErrorMessage(
+                        null
+                      );
+                    }
+                  }}
+                  placeholder="Indtast koden"
+                  placeholderTextColor={
+                    COLORS.lightMuted
+                  }
+                  keyboardType="number-pad"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  editable={!busy}
+                  style={[
+                    styles.input,
+                    styles.codeInput,
+
+                    errorMessage &&
+                      styles.inputError,
+                  ]}
+                />
+              </View>
+
+              {/* ERROR */}
+
+              {errorMessage && (
+                <ErrorBox
+                  message={
+                    errorMessage
+                  }
+                />
+              )}
+
+              {/* VERIFY */}
+
+              <Pressable
+                onPress={verifyCode}
+                disabled={busy}
+                style={({
+                  pressed,
+                }) => [
+                  styles.primaryButton,
+
+                  pressed &&
+                    !busy &&
+                    styles.primaryButtonPressed,
+
+                  busy &&
+                    styles.disabled,
+                ]}
+              >
+                {verifying ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={
+                      COLORS.white
+                    }
+                  />
+                ) : (
+                  <Text
+                    style={
+                      styles.primaryButtonText
+                    }
+                  >
+                    Bekræft kode
+                  </Text>
+                )}
+              </Pressable>
+
+              {/* RESEND */}
+
+              <Pressable
+                onPress={resendCode}
+                disabled={busy}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.smallTextButton,
+
+                  pressed &&
+                    styles.textPressed,
+                ]}
+              >
+                {resending ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={
+                      COLORS.navy
+                    }
+                  />
+                ) : (
+                  <Text
+                    style={
+                      styles.resendText
+                    }
+                  >
+                    Har du ikke modtaget
+                    koden? Send igen
+                  </Text>
+                )}
+              </Pressable>
+
+              {/* SPAM INFO */}
+
+              <Text style={styles.spamText}>
+                Kan du ikke finde mailen? Tjek også din
+                spam- eller uønsket mail-mappe.
+              </Text>
+            </>
+          ) : (
+            <>
+              {/* PASSWORD */}
+
+              <View style={styles.field}>
+                <View
+                  style={styles.labelRow}
+                >
+                  <View
+                    style={
+                      styles.labelIcon
+                    }
+                  >
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={15}
+                      color={
+                        COLORS.navy
+                      }
+                    />
+                  </View>
+
+                  <Text
+                    style={styles.label}
+                  >
+                    Ny adgangskode
+                  </Text>
+                </View>
+
+                <View
+                  style={
+                    styles.passwordContainer
+                  }
+                >
+                  <TextInput
+                    value={password}
+                    onChangeText={(value) => {
+                      setPassword(value);
+
+                      if (
+                        errorMessage
+                      ) {
+                        setErrorMessage(
+                          null
+                        );
+                      }
+                    }}
+                    placeholder="Mindst 8 tegn"
+                    placeholderTextColor={
+                      COLORS.lightMuted
+                    }
+                    secureTextEntry={
+                      !showPassword
+                    }
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="newPassword"
+                    returnKeyType="next"
+                    editable={!busy}
+                    style={
+                      styles.passwordInput
+                    }
+                  />
+
+                  <Pressable
+                    onPress={() =>
+                      setShowPassword(
+                        (current) =>
+                          !current
+                      )
+                    }
+                    hitSlop={8}
+                    style={
+                      styles.eyeButton
+                    }
+                  >
+                    <Ionicons
+                      name={
+                        showPassword
+                          ? 'eye-off-outline'
+                          : 'eye-outline'
+                      }
+                      size={20}
+                      color={
+                        COLORS.muted
+                      }
+                    />
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* CONFIRM PASSWORD */}
+
+              <View style={styles.field}>
+                <View
+                  style={styles.labelRow}
+                >
+                  <View
+                    style={
+                      styles.labelIcon
+                    }
+                  >
+                    <Ionicons
+                      name="shield-checkmark-outline"
+                      size={15}
+                      color={
+                        COLORS.navy
+                      }
+                    />
+                  </View>
+
+                  <Text
+                    style={styles.label}
+                  >
+                    Gentag adgangskode
+                  </Text>
+                </View>
+
+                <View
+                  style={
+                    styles.passwordContainer
+                  }
+                >
+                  <TextInput
+                    value={
+                      confirmPassword
+                    }
+                    onChangeText={(value) => {
+                      setConfirmPassword(
+                        value
+                      );
+
+                      if (
+                        errorMessage
+                      ) {
+                        setErrorMessage(
+                          null
+                        );
+                      }
+                    }}
+                    placeholder="Gentag adgangskoden"
+                    placeholderTextColor={
+                      COLORS.lightMuted
+                    }
+                    secureTextEntry={
+                      !showConfirmPassword
+                    }
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="newPassword"
+                    returnKeyType="done"
+                    editable={!busy}
+                    style={
+                      styles.passwordInput
+                    }
+                  />
+
+                  <Pressable
+                    onPress={() =>
+                      setShowConfirmPassword(
+                        (current) =>
+                          !current
+                      )
+                    }
+                    hitSlop={8}
+                    style={
+                      styles.eyeButton
+                    }
+                  >
+                    <Ionicons
+                      name={
+                        showConfirmPassword
+                          ? 'eye-off-outline'
+                          : 'eye-outline'
+                      }
+                      size={20}
+                      color={
+                        COLORS.muted
+                      }
+                    />
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* ERROR */}
+
+              {errorMessage && (
+                <ErrorBox
+                  message={
+                    errorMessage
+                  }
+                />
+              )}
+
+              {/* SAVE */}
+
+              <Pressable
+                onPress={
+                  updatePassword
+                }
+                disabled={busy}
+                style={({
+                  pressed,
+                }) => [
+                  styles.primaryButton,
+
+                  pressed &&
+                    !busy &&
+                    styles.primaryButtonPressed,
+
+                  busy &&
+                    styles.disabled,
+                ]}
+              >
+                {saving ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={
+                      COLORS.white
+                    }
+                  />
+                ) : (
+                  <Text
+                    style={
+                      styles.primaryButtonText
+                    }
+                  >
+                    Gem ny adgangskode
+                  </Text>
+                )}
+              </Pressable>
+            </>
+          )}
+
+          {/* BACK TO LOGIN */}
+
+          <Pressable
+            onPress={goBackToLogin}
+            disabled={busy}
+            hitSlop={8}
+            style={({ pressed }) => [
+              styles.backToLoginButton,
+
+              pressed &&
+                styles.textPressed,
+
+              busy &&
+                styles.disabled,
+            ]}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={14}
+              color={COLORS.muted}
+            />
+
+            <Text
+              style={
+                styles.backToLoginText
+              }
+            >
+              Tilbage til login
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function hasRecoveryParameters(
-  url: string
-) {
-  return Boolean(
-    getUrlParameter(
-      url,
-      'code'
-    ) ||
-      getUrlParameter(
-        url,
-        'access_token'
-      ) ||
-      getUrlParameter(
-        url,
-        'error_description'
-      )
+function ErrorBox({
+  message,
+}: {
+  message: string;
+}) {
+  return (
+    <View style={styles.errorBox}>
+      <Ionicons
+        name="alert-circle-outline"
+        size={18}
+        color={COLORS.danger}
+      />
+
+      <Text style={styles.errorText}>
+        {message}
+      </Text>
+    </View>
   );
-}
-
-function getUrlParameter(
-  url: string,
-  key: string
-) {
-  const queryPart =
-    url.includes('?')
-      ? url
-          .split('?')[1]
-          ?.split('#')[0]
-      : '';
-
-  const hashPart =
-    url.includes('#')
-      ? url.split('#')[1]
-      : '';
-
-  const sections = [
-    queryPart,
-    hashPart,
-  ];
-
-  for (
-    const section of sections
-  ) {
-    if (!section) {
-      continue;
-    }
-
-    const pairs =
-      section.split('&');
-
-    for (
-      const pair of pairs
-    ) {
-      const [
-        rawKey,
-        ...rawValueParts
-      ] = pair.split('=');
-
-      if (
-        decodeURIComponent(
-          rawKey
-        ) !== key
-      ) {
-        continue;
-      }
-
-      const rawValue =
-        rawValueParts.join('=');
-
-      return decodeURIComponent(
-        rawValue.replace(
-          /\+/g,
-          ' '
-        )
-      );
-    }
-  }
-
-  return null;
 }
 
 const styles = StyleSheet.create({
@@ -853,92 +815,122 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
 
-  content: {
+  scrollContent: {
     flexGrow: 1,
 
     paddingHorizontal: 24,
-    paddingTop: 90,
-    paddingBottom: 40,
+    paddingVertical: 32,
+
+    justifyContent: 'center',
   },
 
-  center: {
-    flex: 1,
+  /* HEADER */
+
+  header: {
+    marginBottom: 34,
 
     alignItems: 'center',
-    justifyContent: 'center',
-
-    backgroundColor: COLORS.white,
-
-    paddingHorizontal: 30,
   },
 
-  loadingText: {
-    fontSize: 14,
-    color: COLORS.muted,
+  logo: {
+    width: 190,
+    height: 125,
 
-    marginTop: 12,
-  },
-
-  headerIcon: {
-    width: 58,
-    height: 58,
-
-    borderRadius: 18,
-
-    backgroundColor: COLORS.navySoft,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    marginBottom: 20,
+    marginBottom: 18,
   },
 
   title: {
     fontSize: 32,
     fontWeight: '700',
+
     color: COLORS.text,
+
+    textAlign: 'center',
   },
 
   subtitle: {
     fontSize: 15,
-    lineHeight: 22,
+
     color: COLORS.muted,
 
     marginTop: 9,
-    marginBottom: 30,
+
+    lineHeight: 22,
+
+    textAlign: 'center',
+
+    paddingHorizontal: 12,
   },
 
-  fieldHeader: {
+  /* FORM */
+
+  form: {
+    gap: 14,
+  },
+
+  field: {
+    gap: 8,
+  },
+
+  labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
 
-    marginBottom: 10,
+    gap: 7,
   },
 
-  secondField: {
-    marginTop: 20,
-  },
+  labelIcon: {
+    width: 26,
+    height: 26,
 
-  smallIconBox: {
-    width: 30,
-    height: 30,
+    borderRadius: 8,
 
-    borderRadius: 9,
-
-    backgroundColor: COLORS.navySoft,
+    backgroundColor:
+      COLORS.navySoft,
 
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  fieldLabel: {
+  label: {
     fontSize: 14,
     fontWeight: '600',
 
     color: COLORS.navy,
-
-    marginLeft: 9,
   },
+
+  input: {
+    height: 56,
+
+    borderRadius: 16,
+
+    backgroundColor:
+      COLORS.white,
+
+    borderWidth: 1,
+
+    borderColor: '#E5E7EB',
+
+    paddingHorizontal: 18,
+
+    fontSize: 16,
+
+    color: COLORS.text,
+  },
+
+  codeInput: {
+    fontSize: 19,
+
+    fontWeight: '600',
+
+    letterSpacing: 3,
+  },
+
+  inputError: {
+    borderColor: '#FCA5A5',
+  },
+
+  /* PASSWORD */
 
   passwordContainer: {
     height: 56,
@@ -946,74 +938,85 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
 
-    backgroundColor: COLORS.white,
-
     borderRadius: 16,
 
+    backgroundColor:
+      COLORS.white,
+
     borderWidth: 1,
+
     borderColor: '#E5E7EB',
   },
 
   passwordInput: {
     flex: 1,
+
     height: 56,
 
     paddingLeft: 18,
     paddingRight: 8,
 
     fontSize: 16,
+
     color: COLORS.text,
   },
 
   eyeButton: {
-    width: 48,
+    width: 50,
     height: 56,
 
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  infoBox: {
+  /* ERROR */
+
+  errorBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
 
-    backgroundColor: COLORS.navySoft,
+    backgroundColor:
+      COLORS.dangerSoft,
 
     borderRadius: 14,
 
-    padding: 13,
+    padding: 12,
 
-    marginTop: 16,
+    gap: 8,
   },
 
-  infoText: {
+  errorText: {
     flex: 1,
 
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 18,
 
-    color: COLORS.muted,
-
-    marginLeft: 9,
+    color: COLORS.dangerDark,
   },
 
+  /* PRIMARY */
+
   primaryButton: {
-    height: 56,
+    height: 58,
 
     borderRadius: 16,
 
-    backgroundColor: COLORS.navy,
+    backgroundColor:
+      COLORS.navy,
 
     alignItems: 'center',
     justifyContent: 'center',
 
-    marginTop: 24,
+    marginTop: 6,
 
-    shadowColor: COLORS.navyDark,
+    shadowColor:
+      COLORS.navyDark,
+
     shadowOffset: {
       width: 0,
       height: 5,
     },
+
     shadowOpacity: 0.13,
     shadowRadius: 12,
 
@@ -1021,7 +1024,8 @@ const styles = StyleSheet.create({
   },
 
   primaryButtonPressed: {
-    backgroundColor: COLORS.navyDark,
+    backgroundColor:
+      COLORS.navyDark,
 
     transform: [
       {
@@ -1031,90 +1035,72 @@ const styles = StyleSheet.create({
   },
 
   primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-
     color: COLORS.white,
-  },
 
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontSize: 16,
 
-    gap: 8,
-  },
-
-  errorContainer: {
-    flex: 1,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    paddingHorizontal: 28,
-  },
-
-  errorIcon: {
-    width: 72,
-    height: 72,
-
-    borderRadius: 22,
-
-    backgroundColor: COLORS.navySoft,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    marginBottom: 22,
-  },
-
-  errorTitle: {
-    fontSize: 26,
     fontWeight: '700',
-
-    color: COLORS.text,
-
-    textAlign: 'center',
   },
 
-  errorDescription: {
-    fontSize: 15,
-    lineHeight: 22,
+  /* SMALL ACTIONS */
 
-    color: COLORS.muted,
+  smallTextButton: {
+    alignSelf: 'center',
 
-    textAlign: 'center',
-
-    marginTop: 9,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
   },
 
-  secondaryButton: {
-    height: 52,
+  resendText: {
+    fontSize: 13,
 
-    alignSelf: 'stretch',
-
-    borderRadius: 16,
-
-    backgroundColor: COLORS.navySoft,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    marginTop: 10,
-  },
-
-  secondaryButtonPressed: {
-    opacity: 0.7,
-  },
-
-  secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
 
     color: COLORS.navy,
   },
 
+  spamText: {
+    fontSize: 12,
+    lineHeight: 17,
+
+    color: COLORS.lightMuted,
+
+    textAlign: 'center',
+
+    paddingHorizontal: 16,
+
+    marginTop: -6,
+  },
+
+  backToLoginButton: {
+    flexDirection: 'row',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    alignSelf: 'center',
+
+    gap: 5,
+
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+
+    marginTop: 2,
+  },
+
+  backToLoginText: {
+    fontSize: 13,
+
+    fontWeight: '500',
+
+    color: COLORS.muted,
+  },
+
   disabled: {
     opacity: 0.5,
+  },
+
+  textPressed: {
+    opacity: 0.6,
   },
 });

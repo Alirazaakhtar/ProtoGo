@@ -76,13 +76,25 @@ export default function SignupScreen() {
       return;
     }
 
+    if (password.length < 8) {
+      Alert.alert(
+        'Adgangskoden er for kort',
+        'Adgangskoden skal være mindst 8 tegn.'
+      );
+
+      return;
+    }
+
     const fullName =
       `${cleanedFirstName} ${cleanedLastName}`;
 
     try {
       setLoading(true);
 
-      const { error } =
+      const {
+        data,
+        error,
+      } =
         await supabase.auth.signUp({
           email: cleanedEmail,
           password,
@@ -110,15 +122,67 @@ export default function SignupScreen() {
         return;
       }
 
-      Alert.alert(
-        'Konto oprettet',
-        'Tjek din e-mail, hvis e-mailbekræftelse er aktiveret.'
+      /*
+       * Hvis email-bekræftelse er
+       * slået fra i Supabase, kan
+       * signUp returnere en session
+       * med det samme.
+       */
+      if (data.session) {
+        await supabase.auth.signOut();
+
+        Alert.alert(
+          'Konto oprettet',
+          'Din konto er oprettet. Du kan nu logge ind.',
+          [
+            {
+              text: 'Log ind',
+
+              onPress: () =>
+                router.replace(
+                  '/login'
+                ),
+            },
+          ]
+        );
+
+        return;
+      }
+
+      /*
+       * Email-bekræftelse er aktiveret.
+       * Send brugeren videre til vores
+       * OTP-side.
+       */
+      router.push({
+        pathname: '/verify-email',
+
+        params: {
+          email: cleanedEmail,
+        },
+      });
+    } catch (error) {
+      console.error(
+        'Kunne ikke oprette konto:',
+        error
       );
 
-      router.replace('/login');
+      Alert.alert(
+        'Noget gik galt',
+        'Kontoen kunne ikke oprettes. Prøv igen.'
+      );
     } finally {
       setLoading(false);
     }
+  }
+
+  function goBackToLogin() {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace('/login');
   }
 
   return (
@@ -233,6 +297,7 @@ export default function SignupScreen() {
               autoCapitalize="words"
               autoCorrect={false}
               returnKeyType="next"
+              editable={!loading}
               style={
                 styles.input
               }
@@ -288,6 +353,7 @@ export default function SignupScreen() {
               autoCapitalize="words"
               autoCorrect={false}
               returnKeyType="next"
+              editable={!loading}
               style={
                 styles.input
               }
@@ -343,7 +409,9 @@ export default function SignupScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
+              textContentType="emailAddress"
               returnKeyType="next"
+              editable={!loading}
               style={
                 styles.input
               }
@@ -399,7 +467,9 @@ export default function SignupScreen() {
               secureTextEntry
               autoCapitalize="none"
               autoCorrect={false}
+              textContentType="newPassword"
               returnKeyType="done"
+              editable={!loading}
               style={
                 styles.input
               }
@@ -421,6 +491,7 @@ export default function SignupScreen() {
               styles.button,
 
               pressed &&
+                !loading &&
                 styles.buttonPressed,
 
               loading &&
@@ -448,11 +519,10 @@ export default function SignupScreen() {
           {/* LOGIN */}
 
           <Pressable
-            onPress={() =>
-              router.replace(
-                '/login'
-              )
+            onPress={
+              goBackToLogin
             }
+            disabled={loading}
             style={({
               pressed,
             }) => [
@@ -460,6 +530,9 @@ export default function SignupScreen() {
 
               pressed &&
                 styles.textPressed,
+
+              loading &&
+                styles.disabled,
             ]}
           >
             <Text

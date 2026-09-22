@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 import {
   ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +13,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import {
+  router,
+  useLocalSearchParams,
+} from 'expo-router';
 
 import { supabase } from '@/lib/supabase';
 
@@ -33,49 +39,157 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
-export default function ForgotPasswordScreen() {
-  const [email, setEmail] = useState('');
-  const [sending, setSending] = useState(false);
+export default function VerifyEmailScreen() {
+  const params =
+    useLocalSearchParams<{
+      email?: string | string[];
+    }>();
 
-  const [errorMessage, setErrorMessage] =
-    useState<string | null>(null);
+  const emailParam =
+    Array.isArray(params.email)
+      ? params.email[0]
+      : params.email;
 
-  async function sendCode() {
-    const cleanedEmail = email
-      .trim()
-      .toLowerCase();
+  const email =
+    emailParam
+      ?.trim()
+      .toLowerCase() ?? '';
 
-    if (!cleanedEmail) {
+  const [code, setCode] =
+    useState('');
+
+  const [verifying, setVerifying] =
+    useState(false);
+
+  const [resending, setResending] =
+    useState(false);
+
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] = useState<string | null>(null);
+
+  async function verifyEmail() {
+    const cleanedCode =
+      code.trim();
+
+    if (!email) {
       setErrorMessage(
-        'Skriv din e-mailadresse.'
+        'E-mailadressen mangler. Gå tilbage og opret kontoen igen.'
+      );
+
+      return;
+    }
+
+    if (!cleanedCode) {
+      setErrorMessage(
+        'Indtast koden fra mailen.'
       );
 
       return;
     }
 
     try {
-      setSending(true);
+      setVerifying(true);
       setErrorMessage(null);
 
       const { error } =
-        await supabase.auth.resetPasswordForEmail(
-          cleanedEmail
-        );
+        await supabase.auth.verifyOtp({
+          email,
+          token: cleanedCode,
+          type: 'email',
+        });
 
       if (error) {
         throw error;
       }
 
-      router.push({
-        pathname: '/reset-password',
+      const {
+        error: signOutError,
+      } =
+        await supabase.auth.signOut();
 
-        params: {
-          email: cleanedEmail,
-        },
-      });
+      if (signOutError) {
+        console.warn(
+          'E-mail blev bekræftet, men logout fejlede:',
+          signOutError
+        );
+      }
+
+      Alert.alert(
+        'E-mail bekræftet',
+        'Din ProtoGo-konto er nu bekræftet. Du kan logge ind.',
+        [
+          {
+            text: 'Log ind',
+
+            onPress: () =>
+              router.dismissTo('/login'),
+          },
+        ]
+      );
     } catch (error: any) {
       console.error(
-        'Kunne ikke sende reset-kode:',
+        'Kunne ikke bekræfte e-mail:',
+        error
+      );
+
+      const message =
+        error?.message
+          ?.toLowerCase()
+          ?.trim() ?? '';
+
+      if (
+        message.includes('expired') ||
+        message.includes('invalid')
+      ) {
+        setErrorMessage(
+          'Koden er ugyldig eller udløbet. Kontrollér koden eller send en ny.'
+        );
+
+        return;
+      }
+
+      setErrorMessage(
+        'Koden kunne ikke bekræftes. Prøv igen.'
+      );
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function resendCode() {
+    if (!email) {
+      setErrorMessage(
+        'E-mailadressen mangler. Gå tilbage og opret kontoen igen.'
+      );
+
+      return;
+    }
+
+    try {
+      setResending(true);
+      setErrorMessage(null);
+
+      const { error } =
+        await supabase.auth.resend({
+          type: 'signup',
+          email,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      setCode('');
+
+      Alert.alert(
+        'Ny kode sendt',
+        `Vi har sendt en ny kode til ${email}. Tjek også din spam-mappe, hvis du ikke kan finde mailen.`
+      );
+    } catch (error: any) {
+      console.error(
+        'Kunne ikke sende ny bekræftelseskode:',
         error
       );
 
@@ -86,7 +200,7 @@ export default function ForgotPasswordScreen() {
 
       if (
         message.includes(
-          'email rate limit exceeded'
+          'rate limit'
         )
       ) {
         setErrorMessage(
@@ -97,21 +211,20 @@ export default function ForgotPasswordScreen() {
       }
 
       setErrorMessage(
-        'Koden kunne ikke sendes. Prøv igen om lidt.'
+        'En ny kode kunne ikke sendes. Prøv igen om lidt.'
       );
     } finally {
-      setSending(false);
+      setResending(false);
     }
   }
 
   function goBackToLogin() {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-
-    router.replace('/login');
+    router.dismissTo('/login');
   }
+
+  const busy =
+    verifying ||
+    resending;
 
   return (
     <KeyboardAvoidingView
@@ -144,57 +257,63 @@ export default function ForgotPasswordScreen() {
           />
 
           <Text style={styles.title}>
-            Glemt adgangskode?
+            Bekræft din e-mail
           </Text>
 
           <Text style={styles.subtitle}>
-            Indtast e-mailadressen til din
-            ProtoGo-konto, så sender vi dig en
-            kode til at vælge en ny adgangskode.
+            Vi har sendt en kode til{' '}
+            {email || 'din e-mailadresse'}.
+            Indtast koden for at aktivere din
+            ProtoGo-konto.
           </Text>
         </View>
 
         {/* FORM */}
 
         <View style={styles.form}>
-          {/* EMAIL */}
+          {/* CODE */}
 
           <View style={styles.field}>
             <View style={styles.labelRow}>
               <View style={styles.labelIcon}>
                 <Ionicons
-                  name="mail-outline"
+                  name="keypad-outline"
                   size={15}
                   color={COLORS.navy}
                 />
               </View>
 
               <Text style={styles.label}>
-                E-mail
+                Bekræftelseskode
               </Text>
             </View>
 
             <TextInput
-              value={email}
+              value={code}
               onChangeText={(value) => {
-                setEmail(value);
+                setCode(
+                  value.replace(
+                    /\D/g,
+                    ''
+                  )
+                );
 
                 if (errorMessage) {
                   setErrorMessage(null);
                 }
               }}
-              placeholder="laerer@skole.dk"
+              placeholder="Indtast koden"
               placeholderTextColor={
                 COLORS.lightMuted
               }
+              keyboardType="number-pad"
               autoCapitalize="none"
               autoCorrect={false}
-              keyboardType="email-address"
-              textContentType="emailAddress"
               returnKeyType="done"
-              editable={!sending}
+              editable={!busy}
               style={[
                 styles.input,
+                styles.codeInput,
 
                 errorMessage &&
                   styles.inputError,
@@ -212,29 +331,31 @@ export default function ForgotPasswordScreen() {
                 color={COLORS.danger}
               />
 
-              <Text style={styles.errorText}>
+              <Text
+                style={styles.errorText}
+              >
                 {errorMessage}
               </Text>
             </View>
           )}
 
-          {/* SEND */}
+          {/* VERIFY */}
 
           <Pressable
-            onPress={sendCode}
-            disabled={sending}
+            onPress={verifyEmail}
+            disabled={busy}
             style={({ pressed }) => [
               styles.primaryButton,
 
               pressed &&
-                !sending &&
+                !busy &&
                 styles.primaryButtonPressed,
 
-              sending &&
+              busy &&
                 styles.disabled,
             ]}
           >
-            {sending ? (
+            {verifying ? (
               <ActivityIndicator
                 size="small"
                 color={COLORS.white}
@@ -245,16 +366,53 @@ export default function ForgotPasswordScreen() {
                   styles.primaryButtonText
                 }
               >
-                Send kode
+                Bekræft e-mail
               </Text>
             )}
           </Pressable>
 
-          {/* LOGIN */}
+          {/* RESEND */}
+
+          <Pressable
+            onPress={resendCode}
+            disabled={busy}
+            hitSlop={8}
+            style={({ pressed }) => [
+              styles.resendButton,
+
+              pressed &&
+                styles.textPressed,
+
+              busy &&
+                styles.disabled,
+            ]}
+          >
+            {resending ? (
+              <ActivityIndicator
+                size="small"
+                color={COLORS.navy}
+              />
+            ) : (
+              <Text style={styles.resendText}>
+                Har du ikke modtaget koden? Send igen
+              </Text>
+            )}
+          </Pressable>
+
+          {/* SPAM INFO */}
+
+          <View style={styles.spamInfo}>
+            <Text style={styles.spamInfoText}>
+              Kan du ikke finde mailen? Tjek også din
+              spam- eller uønsket mail-mappe.
+            </Text>
+          </View>
+
+          {/* BACK TO LOGIN */}
 
           <Pressable
             onPress={goBackToLogin}
-            disabled={sending}
+            disabled={busy}
             hitSlop={8}
             style={({ pressed }) => [
               styles.backToLoginButton,
@@ -262,7 +420,7 @@ export default function ForgotPasswordScreen() {
               pressed &&
                 styles.textPressed,
 
-              sending &&
+              busy &&
                 styles.disabled,
             ]}
           >
@@ -289,7 +447,9 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.white,
+
+    backgroundColor:
+      COLORS.white,
   },
 
   scrollContent: {
@@ -351,6 +511,7 @@ const styles = StyleSheet.create({
 
   labelRow: {
     flexDirection: 'row',
+
     alignItems: 'center',
 
     gap: 7,
@@ -371,6 +532,7 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: 14,
+
     fontWeight: '600',
 
     color: COLORS.navy,
@@ -395,6 +557,14 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
 
+  codeInput: {
+    fontSize: 19,
+
+    fontWeight: '600',
+
+    letterSpacing: 3,
+  },
+
   inputError: {
     borderColor: '#FCA5A5',
   },
@@ -403,7 +573,10 @@ const styles = StyleSheet.create({
 
   errorBox: {
     flexDirection: 'row',
+
     alignItems: 'flex-start',
+
+    gap: 8,
 
     backgroundColor:
       COLORS.dangerSoft,
@@ -411,8 +584,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
 
     padding: 12,
-
-    gap: 8,
   },
 
   errorText: {
@@ -472,18 +643,48 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  helpText: {
+  /* RESEND */
+
+  resendButton: {
+    alignSelf: 'center',
+
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+
+  resendText: {
+    fontSize: 13,
+
+    fontWeight: '600',
+
+    color: COLORS.navy,
+
+    textAlign: 'center',
+  },
+
+  /* SPAM INFO */
+
+  spamInfo: {
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    paddingHorizontal: 14,
+
+    marginTop: -4,
+  },
+
+  spamInfoText: {
+    flexShrink: 1,
+
     fontSize: 12,
-    lineHeight: 18,
+    lineHeight: 17,
 
     color: COLORS.lightMuted,
 
     textAlign: 'center',
-
-    paddingHorizontal: 16,
   },
 
-  /* BACK TO LOGIN */
+  /* LOGIN */
 
   backToLoginButton: {
     flexDirection: 'row',
