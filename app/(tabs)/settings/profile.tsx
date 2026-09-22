@@ -31,6 +31,11 @@ const COLORS = {
   lightMuted: '#9CA3AF',
 
   white: '#FFFFFF',
+
+  danger: '#DC2626',
+  dangerDark: '#B91C1C',
+  dangerSoft: '#FEF2F2',
+  dangerBorder: '#FECACA',
 };
 
 export default function ProfileScreen() {
@@ -182,8 +187,7 @@ export default function ProfileScreen() {
       } = await supabase
         .from('profiles')
         .update({
-          full_name:
-            fullName,
+          full_name: fullName,
         })
         .eq(
           'id',
@@ -235,9 +239,7 @@ export default function ProfileScreen() {
         'Dine ændringer er gemt.'
       );
     } catch (error) {
-      console.error(
-        error
-      );
+      console.error(error);
 
       Alert.alert(
         'Kunne ikke gemme',
@@ -248,18 +250,41 @@ export default function ProfileScreen() {
     }
   }
 
+  function handleLogout() {
+    Alert.alert(
+      'Log ud',
+      'Er du sikker på, at du vil logge ud?',
+      [
+        {
+          text: 'Annuller',
+          style: 'cancel',
+        },
+        {
+          text: 'Log ud',
+          style: 'destructive',
+
+          onPress: async () => {
+            const { error } =
+              await supabase.auth.signOut();
+
+            if (error) {
+              Alert.alert(
+                'Kunne ikke logge ud',
+                error.message
+              );
+            }
+          },
+        },
+      ]
+    );
+  }
+
   if (loading) {
     return (
-      <View
-        style={
-          styles.center
-        }
-      >
+      <View style={styles.center}>
         <ActivityIndicator
           size="small"
-          color={
-            COLORS.navy
-          }
+          color={COLORS.navy}
         />
       </View>
     );
@@ -267,9 +292,7 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={
-        styles.container
-      }
+      style={styles.container}
       behavior={
         Platform.OS === 'ios'
           ? 'padding'
@@ -294,47 +317,21 @@ export default function ProfileScreen() {
 
         {/* HEADER */}
 
-        <Text
-          style={
-            styles.eyebrow
-          }
-        >
-          Konto
-        </Text>
-
-        <Text
-          style={
-            styles.title
-          }
-        >
+        <Text style={styles.title}>
           Profil
         </Text>
 
-        <Text
-          style={
-            styles.subtitle
-          }
-        >
+        <Text style={styles.subtitle}>
           Administrer dine personlige
           oplysninger.
         </Text>
 
         {/* PROFILKORT */}
 
-        <View
-          style={
-            styles.profileCard
-          }
-        >
-          <View
-            style={
-              styles.avatar
-            }
-          >
+        <View style={styles.profileCard}>
+          <View style={styles.avatar}>
             <Text
-              style={
-                styles.avatarText
-              }
+              style={styles.avatarText}
             >
               {getInitials(
                 firstName,
@@ -349,9 +346,7 @@ export default function ProfileScreen() {
             }
           >
             <Text
-              style={
-                styles.profileName
-              }
+              style={styles.profileName}
               numberOfLines={1}
             >
               {firstName}{' '}
@@ -359,9 +354,7 @@ export default function ProfileScreen() {
             </Text>
 
             <Text
-              style={
-                styles.profileEmail
-              }
+              style={styles.profileEmail}
               numberOfLines={1}
             >
               {email}
@@ -369,7 +362,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* SKILLELINJE */}
+        {/* DIVIDER */}
 
         <View
           style={
@@ -379,16 +372,8 @@ export default function ProfileScreen() {
 
         {/* FORNAVN */}
 
-        <View
-          style={
-            styles.field
-          }
-        >
-          <View
-            style={
-              styles.labelRow
-            }
-          >
+        <View style={styles.field}>
+          <View style={styles.labelRow}>
             <View
               style={
                 styles.labelIcon
@@ -397,25 +382,17 @@ export default function ProfileScreen() {
               <Ionicons
                 name="person-outline"
                 size={15}
-                color={
-                  COLORS.navy
-                }
+                color={COLORS.navy}
               />
             </View>
 
-            <Text
-              style={
-                styles.label
-              }
-            >
+            <Text style={styles.label}>
               Fornavn
             </Text>
           </View>
 
           <TextInput
-            value={
-              firstName
-            }
+            value={firstName}
             onChangeText={
               setFirstName
             }
@@ -426,27 +403,15 @@ export default function ProfileScreen() {
             autoCapitalize="words"
             autoCorrect={false}
             returnKeyType="next"
-            editable={
-              !saving
-            }
-            style={
-              styles.input
-            }
+            editable={!saving}
+            style={styles.input}
           />
         </View>
 
         {/* EFTERNAVN */}
 
-        <View
-          style={
-            styles.field
-          }
-        >
-          <View
-            style={
-              styles.labelRow
-            }
-          >
+        <View style={styles.field}>
+          <View style={styles.labelRow}>
             <View
               style={
                 styles.labelIcon
@@ -455,25 +420,17 @@ export default function ProfileScreen() {
               <Ionicons
                 name="person-outline"
                 size={15}
-                color={
-                  COLORS.navy
-                }
+                color={COLORS.navy}
               />
             </View>
 
-            <Text
-              style={
-                styles.label
-              }
-            >
+            <Text style={styles.label}>
               Efternavn
             </Text>
           </View>
 
           <TextInput
-            value={
-              lastName
-            }
+            value={lastName}
             onChangeText={
               setLastName
             }
@@ -484,27 +441,17 @@ export default function ProfileScreen() {
             autoCapitalize="words"
             autoCorrect={false}
             returnKeyType="done"
-            editable={
-              !saving
-            }
-            style={
-              styles.input
-            }
+            editable={!saving}
+            style={styles.input}
           />
         </View>
 
         {/* GEM */}
 
         <Pressable
-          onPress={
-            saveProfile
-          }
-          disabled={
-            saving
-          }
-          style={({
-            pressed,
-          }) => [
+          onPress={saveProfile}
+          disabled={saving}
+          style={({ pressed }) => [
             styles.saveButton,
 
             pressed &&
@@ -518,22 +465,18 @@ export default function ProfileScreen() {
           {saving ? (
             <ActivityIndicator
               size="small"
-              color={
-                COLORS.white
-              }
+              color={COLORS.white}
             />
           ) : (
             <View
               style={
-                styles.saveButtonContent
+                styles.buttonContent
               }
             >
               <Ionicons
                 name="checkmark-outline"
                 size={20}
-                color={
-                  COLORS.white
-                }
+                color={COLORS.white}
               />
 
               <Text
@@ -546,6 +489,55 @@ export default function ProfileScreen() {
             </View>
           )}
         </Pressable>
+
+        {/* DIVIDER */}
+
+        <View
+          style={
+            styles.logoutDivider
+          }
+        />
+
+        {/* LOG UD */}
+
+        <Pressable
+          onPress={handleLogout}
+          disabled={saving}
+          style={({ pressed }) => [
+            styles.logoutButton,
+
+            pressed &&
+              styles.logoutButtonPressed,
+
+            saving &&
+              styles.disabled,
+          ]}
+        >
+          <View
+            style={
+              styles.buttonContent
+            }
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={20}
+              color={COLORS.danger}
+            />
+
+            <Text
+              style={
+                styles.logoutText
+              }
+            >
+              Log ud
+            </Text>
+          </View>
+        </Pressable>
+
+        <Text style={styles.footer}>
+                © 2026 ProtoGo
+              </Text>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -560,34 +552,24 @@ function splitFullName(
       .split(/\s+/)
       .filter(Boolean);
 
-  if (
-    parts.length === 0
-  ) {
+  if (parts.length === 0) {
     return {
       firstName: '',
       lastName: '',
     };
   }
 
-  if (
-    parts.length === 1
-  ) {
+  if (parts.length === 1) {
     return {
-      firstName:
-        parts[0],
-
-      lastName:
-        '',
+      firstName: parts[0],
+      lastName: '',
     };
   }
 
   return {
     firstName:
       parts
-        .slice(
-          0,
-          -1
-        )
+        .slice(0, -1)
         .join(' '),
 
     lastName:
@@ -619,299 +601,349 @@ function getInitials(
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
 
-      backgroundColor:
-        COLORS.white,
+    backgroundColor:
+      COLORS.white,
+  },
+
+  content: {
+    flexGrow: 1,
+
+    padding: 20,
+
+    paddingTop: 70,
+    paddingBottom: 50,
+  },
+
+  center: {
+    flex: 1,
+
+    alignItems: 'center',
+
+    justifyContent:
+      'center',
+
+    backgroundColor:
+      COLORS.white,
+  },
+
+  /* HEADER */
+
+  eyebrow: {
+    fontSize: 14,
+
+    color: COLORS.muted,
+  },
+
+  title: {
+    fontSize: 34,
+
+    fontWeight: '700',
+
+    color: COLORS.text,
+
+    marginTop: 4,
+  },
+
+  subtitle: {
+    fontSize: 15,
+
+    color: COLORS.muted,
+
+    lineHeight: 21,
+
+    marginTop: 7,
+    marginBottom: 24,
+  },
+
+  /* PROFILE CARD */
+
+  profileCard: {
+    minHeight: 90,
+
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    backgroundColor:
+      COLORS.white,
+
+    borderRadius: 20,
+
+    padding: 18,
+
+    shadowColor: '#000000',
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
 
-    content: {
-      flexGrow: 1,
+    shadowOpacity: 0.04,
 
-      padding: 20,
+    shadowRadius: 14,
 
-      paddingTop: 70,
-      paddingBottom: 60,
+    elevation: 1,
+  },
+
+  avatar: {
+    width: 52,
+    height: 52,
+
+    borderRadius: 26,
+
+    backgroundColor:
+      COLORS.navySoft,
+
+    alignItems: 'center',
+
+    justifyContent:
+      'center',
+
+    marginRight: 14,
+  },
+
+  avatarText: {
+    fontSize: 16,
+
+    fontWeight: '800',
+
+    color: COLORS.navy,
+  },
+
+  profileCardText: {
+    flex: 1,
+  },
+
+  profileName: {
+    fontSize: 18,
+
+    fontWeight: '700',
+
+    color: COLORS.text,
+  },
+
+  profileEmail: {
+    fontSize: 13,
+
+    color: COLORS.muted,
+
+    marginTop: 4,
+  },
+
+  /* DIVIDER */
+
+  sectionDivider: {
+    height: 1,
+
+    backgroundColor:
+      '#EEF0F3',
+
+    marginTop: 24,
+
+    marginBottom: 24,
+  },
+
+  /* FORM */
+
+  field: {
+    marginBottom: 18,
+  },
+
+  labelRow: {
+    flexDirection: 'row',
+
+    alignItems: 'center',
+
+    gap: 7,
+
+    marginBottom: 8,
+  },
+
+  labelIcon: {
+    width: 26,
+    height: 26,
+
+    borderRadius: 8,
+
+    backgroundColor:
+      COLORS.navySoft,
+
+    alignItems: 'center',
+
+    justifyContent:
+      'center',
+  },
+
+  label: {
+    fontSize: 13,
+
+    fontWeight: '600',
+
+    color: COLORS.navy,
+  },
+
+  input: {
+    height: 56,
+
+    backgroundColor:
+      COLORS.white,
+
+    borderRadius: 16,
+
+    borderWidth: 1,
+
+    borderColor: '#E5E7EB',
+
+    paddingHorizontal: 18,
+
+    fontSize: 16,
+
+    color: COLORS.text,
+  },
+
+  /* BUTTONS */
+
+  saveButton: {
+    height: 56,
+
+    borderRadius: 16,
+
+    backgroundColor:
+      COLORS.navy,
+
+    alignItems: 'center',
+
+    justifyContent:
+      'center',
+
+    marginTop: 10,
+
+    shadowColor:
+      COLORS.navyDark,
+
+    shadowOffset: {
+      width: 0,
+      height: 5,
     },
 
-    center: {
-      flex: 1,
+    shadowOpacity: 0.13,
 
-      alignItems:
-        'center',
+    shadowRadius: 12,
 
-      justifyContent:
-        'center',
+    elevation: 2,
+  },
 
-      backgroundColor:
-        COLORS.white,
-    },
+  saveButtonPressed: {
+    backgroundColor:
+      COLORS.navyDark,
 
-    /* HEADER */
-
-    eyebrow: {
-      fontSize: 14,
-
-      color:
-        COLORS.muted,
-    },
-
-    title: {
-      fontSize: 34,
-
-      fontWeight:
-        '700',
-
-      color:
-        COLORS.text,
-
-      marginTop: 4,
-    },
-
-    subtitle: {
-      fontSize: 15,
-
-      color:
-        COLORS.muted,
-
-      lineHeight: 21,
-
-      marginTop: 7,
-      marginBottom: 24,
-    },
-
-    /* PROFIL */
-
-    profileCard: {
-      minHeight: 90,
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      backgroundColor:
-        COLORS.white,
-
-      borderRadius: 20,
-
-      padding: 18,
-
-      shadowColor:
-        '#000000',
-
-      shadowOffset: {
-        width: 0,
-        height: 4,
+    transform: [
+      {
+        scale: 0.99,
       },
+    ],
+  },
 
-      shadowOpacity: 0.04,
+  buttonContent: {
+    flexDirection: 'row',
 
-      shadowRadius: 14,
+    alignItems: 'center',
 
-      elevation: 1,
+    justifyContent:
+      'center',
+
+    gap: 8,
+  },
+
+  saveButtonText: {
+    fontSize: 16,
+
+    fontWeight: '700',
+
+    color: COLORS.white,
+  },
+
+  /* LOGOUT */
+
+  logoutDivider: {
+    height: 1,
+
+    backgroundColor:
+      '#EEF0F3',
+
+    marginTop: 32,
+
+    marginBottom: 28,
+  },
+
+  logoutButton: {
+    height: 56,
+
+    borderRadius: 16,
+
+    backgroundColor:
+      COLORS.dangerSoft,
+
+    borderWidth: 1,
+
+    borderColor:
+      COLORS.dangerBorder,
+
+    alignItems: 'center',
+
+    justifyContent:
+      'center',
+
+    shadowColor:
+      COLORS.dangerDark,
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
 
-    avatar: {
-      width: 52,
-      height: 52,
+    shadowOpacity: 0.06,
 
-      borderRadius: 26,
+    shadowRadius: 10,
 
-      backgroundColor:
-        COLORS.navySoft,
+    elevation: 1,
+  },
 
-      alignItems:
-        'center',
+  logoutButtonPressed: {
+    backgroundColor:
+      '#FEE2E2',
 
-      justifyContent:
-        'center',
-
-      marginRight: 14,
-    },
-
-    avatarText: {
-      fontSize: 16,
-
-      fontWeight:
-        '800',
-
-      color:
-        COLORS.navy,
-    },
-
-    profileCardText: {
-      flex: 1,
-    },
-
-    profileName: {
-      fontSize: 18,
-
-      fontWeight:
-        '700',
-
-      color:
-        COLORS.text,
-    },
-
-    profileEmail: {
-      fontSize: 13,
-
-      color:
-        COLORS.muted,
-
-      marginTop: 4,
-    },
-
-    /* DIVIDER */
-
-    sectionDivider: {
-      height: 1,
-
-      backgroundColor:
-        '#EEF0F3',
-
-      marginTop: 24,
-      marginBottom: 24,
-    },
-
-    /* FORM */
-
-    field: {
-      marginBottom: 18,
-    },
-
-    labelRow: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      gap: 7,
-
-      marginBottom: 8,
-    },
-
-    labelIcon: {
-      width: 26,
-      height: 26,
-
-      borderRadius: 8,
-
-      backgroundColor:
-        COLORS.navySoft,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-    },
-
-    label: {
-      fontSize: 13,
-
-      fontWeight:
-        '600',
-
-      color:
-        COLORS.navy,
-    },
-
-    input: {
-      height: 56,
-
-      backgroundColor:
-        COLORS.white,
-
-      borderRadius: 16,
-
-      borderWidth: 1,
-
-      borderColor:
-        '#E5E7EB',
-
-      paddingHorizontal: 18,
-
-      fontSize: 16,
-
-      color:
-        COLORS.text,
-    },
-
-    /* SAVE */
-
-    saveButton: {
-      height: 56,
-
-      borderRadius: 16,
-
-      backgroundColor:
-        COLORS.navy,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      marginTop: 10,
-
-      shadowColor:
-        COLORS.navyDark,
-
-      shadowOffset: {
-        width: 0,
-        height: 5,
+    transform: [
+      {
+        scale: 0.99,
       },
+    ],
+  },
 
-      shadowOpacity: 0.13,
+  logoutText: {
+    fontSize: 15,
 
-      shadowRadius: 12,
+    fontWeight: '700',
 
-      elevation: 2,
-    },
+    color: COLORS.danger,
+  },
 
-    saveButtonPressed: {
-      backgroundColor:
-        COLORS.navyDark,
+  disabled: {
+    opacity: 0.5,
+  },
 
-      transform: [
-        {
-          scale: 0.99,
-        },
-      ],
-    },
+    /* FOOTER */
 
-    saveButtonContent: {
-      flexDirection:
-        'row',
+  footer: {
+    fontSize: 12,
+    color: COLORS.lightMuted,
 
-      alignItems:
-        'center',
+    textAlign: 'center',
 
-      justifyContent:
-        'center',
-
-      gap: 8,
-    },
-
-    saveButtonText: {
-      fontSize: 16,
-
-      fontWeight:
-        '700',
-
-      color:
-        COLORS.white,
-    },
-
-    disabled: {
-      opacity: 0.5,
-    },
-  });
+    marginTop: 30,
+  },
+});

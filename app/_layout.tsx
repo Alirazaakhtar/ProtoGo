@@ -86,15 +86,49 @@ export default function RootLayout() {
         headerShown: false,
       }}
     >
+      {/* LOGGET UD */}
+
       <Stack.Protected guard={!session}>
-        <Stack.Screen name="login" />
-        <Stack.Screen name="signup" />
+        <Stack.Screen
+          name="login"
+        />
+
+        <Stack.Screen
+          name="signup"
+        />
+
+        <Stack.Screen
+          name="forgot-password"
+        />
       </Stack.Protected>
 
+      {/* LOGGET IND */}
+
       <Stack.Protected guard={!!session}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="invites" />
+        <Stack.Screen
+          name="(tabs)"
+        />
+
+        <Stack.Screen
+          name="invites"
+        />
       </Stack.Protected>
+
+      {/*
+       * PASSWORD RECOVERY
+       *
+       * Skal være tilgængelig uanset
+       * auth-state, fordi Supabase kan
+       * oprette en midlertidig session
+       * under password recovery.
+       *
+       * Den ligger sidst, så den ikke
+       * bliver appens fallback-side
+       * ved normal opstart.
+       */}
+      <Stack.Screen
+        name="reset-password"
+      />
     </Stack>
   );
 }

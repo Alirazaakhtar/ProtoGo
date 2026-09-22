@@ -189,21 +189,28 @@ export default function LoginScreen() {
               style={styles.input}
             />
 
-            <Pressable
-              onPress={forgotPassword}
-              style={({ pressed }) => [
-                styles.forgotButton,
-
-                pressed &&
-                  styles.textPressed,
-              ]}
-            >
-              <Text
-                style={styles.forgotText}
-              >
-                Glemt adgangskode?
-              </Text>
-            </Pressable>
+<Pressable
+  onPress={() =>
+    router.push(
+      '/forgot-password'
+    )
+  }
+  hitSlop={8}
+  style={({ pressed }) => [
+    styles.forgotPasswordButton,
+    pressed && {
+      opacity: 0.6,
+    },
+  ]}
+>
+  <Text
+    style={
+      styles.forgotPasswordText
+    }
+  >
+    Glemt adgangskode?
+  </Text>
+</Pressable>
           </View>
 
           {/* LOGIN */}
@@ -478,4 +485,15 @@ const styles = StyleSheet.create({
   textPressed: {
     opacity: 0.6,
   },
+
+  forgotPasswordButton: {
+  alignSelf: 'flex-end',
+  marginTop: 10,
+},
+
+forgotPasswordText: {
+  fontSize: 14,
+  fontWeight: '600',
+  color: COLORS.navy,
+},
 });

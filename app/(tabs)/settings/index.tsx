@@ -1,5 +1,4 @@
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,11 +9,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-import { supabase } from '@/lib/supabase';
-
 const COLORS = {
   navy: '#1E3A5F',
-  navyDark: '#16324F',
   navySoft: '#EAF0F6',
 
   text: '#111827',
@@ -22,151 +18,107 @@ const COLORS = {
   lightMuted: '#9CA3AF',
 
   white: '#FFFFFF',
-
-  danger: '#DC2626',
-  dangerDark: '#B91C1C',
-  dangerSoft: '#FEF2F2',
-  dangerBorder: '#FECACA',
 };
 
 export default function SettingsScreen() {
-  function handleLogout() {
-    Alert.alert(
-      'Log ud',
-      'Er du sikker på, at du vil logge ud?',
-      [
-        {
-          text: 'Annuller',
-          style: 'cancel',
-        },
-        {
-          text: 'Log ud',
-          style: 'destructive',
-
-          onPress: async () => {
-            const { error } =
-              await supabase.auth.signOut();
-
-            if (error) {
-              Alert.alert(
-                'Kunne ikke logge ud',
-                error.message
-              );
-            }
-          },
-        },
-      ]
-    );
-  }
-
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={
-        styles.content
-      }
-      showsVerticalScrollIndicator={
-        false
-      }
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
     >
-      <Text
-        style={
-          styles.title
-        }
-      >
+      <Text style={styles.title}>
         Indstillinger
       </Text>
 
-      {/* INDSTILLINGER */}
+      {/* KONTO */}
 
-      <View
-        style={
-          styles.sectionShadow
-        }
-      >
-        <View
-          style={
-            styles.section
-          }
-        >
+      <Text style={styles.sectionLabel}>
+        Konto
+      </Text>
+
+      <View style={styles.sectionShadow}>
+        <View style={styles.section}>
           <SettingRow
             icon="person-outline"
             title="Profil"
-            subtitle="Navn, e-mail og konto"
+            subtitle="Navn og konto"
             onPress={() =>
-              router.push(
-                '/settings/profile'
-              )
+              router.push('/settings/profile')
             }
-          />
-
-          <View
-            style={
-              styles.divider
-            }
-          />
-
-          <SettingRow
-            icon="notifications-outline"
-            title="Notifikationer"
-            subtitle="Administrer beskeder"
-            onPress={() => {}}
-          />
-
-          <View
-            style={
-              styles.divider
-            }
-          />
-
-          <SettingRow
-            icon="options-outline"
-            title="App-indstillinger"
-            subtitle="Tilpas appen"
-            onPress={() => {}}
           />
         </View>
       </View>
 
-      <View
-        style={
-          styles.spacer
-        }
-      />
+      {/* APP */}
 
-      {/* LOG UD */}
+      <View style={styles.sectionDivider} />
 
-      <Pressable
-        onPress={
-          handleLogout
-        }
-        style={({
-          pressed,
-        }) => [
-          styles.logoutButton,
+      <Text style={styles.sectionLabel}>
+        App
+      </Text>
 
-          pressed &&
-            styles.logoutButtonPressed,
-        ]}
-      >
-        <Text
-          style={
-            styles.logoutText
-          }
-        >
-          Log ud
-        </Text>
-      </Pressable>
+      <View style={styles.sectionShadow}>
+        <View style={styles.section}>
+          <SettingRow
+            icon="notifications-outline"
+            title="Notifikationer"
+            subtitle="Administrer påmindelser"
+            onPress={() =>
+              router.push('/settings/notifications')
+            }
+          />
+        </View>
+      </View>
+
+      {/* HJÆLP OG INFORMATION */}
+
+      <View style={styles.sectionDivider} />
+
+      <Text style={styles.sectionLabel}>
+        Hjælp og information
+      </Text>
+
+      <View style={styles.sectionShadow}>
+        <View style={styles.section}>
+          <SettingRow
+            icon="chatbubble-ellipses-outline"
+            title="Kontakt & support"
+            subtitle="Få hjælp eller kontakt os"
+            onPress={() =>
+              router.push('/settings/support')
+            }
+          />
+
+          <View style={styles.divider} />
+
+          <SettingRow
+            icon="book-outline"
+            title="Brugervejledning"
+            subtitle="Sådan bruger du ProtoGo"
+            onPress={() =>
+              router.push('/settings/guide')
+            }
+          />
+
+          <View style={styles.divider} />
+
+          <SettingRow
+            icon="information-circle-outline"
+            title="Om ProtoGo"
+            subtitle="Version og information"
+            onPress={() =>
+              router.push('/settings/about')
+            }
+          />
+        </View>
+      </View>
     </ScrollView>
   );
 }
 
 type SettingRowProps = {
-  icon:
-    | 'person-outline'
-    | 'notifications-outline'
-    | 'options-outline';
-
+  icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
   onPress: () => void;
@@ -180,281 +132,169 @@ function SettingRow({
 }: SettingRowProps) {
   return (
     <Pressable
-      onPress={
-        onPress
-      }
-      style={({
-        pressed,
-      }) => [
+      onPress={onPress}
+      style={({ pressed }) => [
         styles.row,
-
-        pressed &&
-          styles.rowPressed,
+        pressed && styles.rowPressed,
       ]}
     >
-      <View
-        style={
-          styles.iconBox
-        }
-      >
+      <View style={styles.iconBox}>
         <Ionicons
-          name={
-            icon
-          }
+          name={icon}
           size={20}
-          color={
-            COLORS.navy
-          }
+          color={COLORS.navy}
         />
       </View>
 
-      <View
-        style={
-          styles.rowText
-        }
-      >
-        <Text
-          style={
-            styles.rowTitle
-          }
-        >
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>
           {title}
         </Text>
 
-        <Text
-          style={
-            styles.rowSubtitle
-          }
-        >
+        <Text style={styles.rowSubtitle}>
           {subtitle}
         </Text>
       </View>
 
-      <View
-        style={
-          styles.chevronBox
-        }
-      >
+      <View style={styles.chevronBox}>
         <Ionicons
           name="chevron-forward"
           size={18}
-          color={
-            COLORS.navy
-          }
+          color={COLORS.navy}
         />
       </View>
     </Pressable>
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
 
-      backgroundColor:
-        COLORS.white,
+  content: {
+    flexGrow: 1,
+
+    paddingHorizontal: 20,
+    paddingTop: 70,
+    paddingBottom: 50,
+  },
+
+  title: {
+    fontSize: 34,
+    fontWeight: '700',
+    color: COLORS.text,
+
+    marginTop: 4,
+    marginBottom: 28,
+  },
+
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.muted,
+
+    marginLeft: 2,
+    marginBottom: 12,
+  },
+
+  sectionShadow: {
+    borderRadius: 20,
+
+    shadowColor: '#000000',
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
 
-    content: {
-      flexGrow: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
 
-      paddingHorizontal: 20,
-      paddingTop: 70,
-      paddingBottom: 40,
-    },
+    elevation: 2,
+  },
 
-    title: {
-      fontSize: 34,
+  section: {
+    backgroundColor: COLORS.white,
 
-      fontWeight:
-        '700',
+    borderRadius: 20,
 
-      color:
-        COLORS.text,
+    overflow: 'hidden',
+  },
 
-      marginTop: 4,
-      marginBottom: 28,
-    },
+  sectionDivider: {
+    height: 1,
 
-    /* SETTINGS CARD */
+    backgroundColor: '#EEF0F3',
 
-    sectionShadow: {
-      borderRadius: 20,
+    marginTop: 28,
+    marginBottom: 24,
+  },
 
-      shadowColor:
-        '#000000',
+  row: {
+    minHeight: 76,
 
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
+    flexDirection: 'row',
+    alignItems: 'center',
 
-      shadowOpacity: 0.06,
+    paddingHorizontal: 16,
+  },
 
-      shadowRadius: 14,
+  rowPressed: {
+    backgroundColor: '#F8FAFC',
+  },
 
-      elevation: 2,
-    },
+  iconBox: {
+    width: 42,
+    height: 42,
 
-    section: {
-      backgroundColor:
-        COLORS.white,
+    borderRadius: 13,
 
-      borderRadius: 20,
+    backgroundColor: COLORS.navySoft,
 
-      overflow:
-        'hidden',
-    },
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-    row: {
-      minHeight: 76,
+  rowText: {
+    flex: 1,
 
-      flexDirection:
-        'row',
+    marginLeft: 14,
+  },
 
-      alignItems:
-        'center',
+  rowTitle: {
+    fontSize: 16,
+    fontWeight: '600',
 
-      paddingHorizontal: 16,
-    },
+    color: COLORS.text,
+  },
 
-    rowPressed: {
-      backgroundColor:
-        '#F8FAFC',
-    },
+  rowSubtitle: {
+    fontSize: 13,
 
-    iconBox: {
-      width: 42,
-      height: 42,
+    color: COLORS.lightMuted,
 
-      borderRadius: 13,
+    marginTop: 3,
+  },
 
-      backgroundColor:
-        COLORS.navySoft,
+  chevronBox: {
+    width: 30,
+    height: 30,
 
-      alignItems:
-        'center',
+    borderRadius: 15,
 
-      justifyContent:
-        'center',
-    },
+    backgroundColor: COLORS.navySoft,
 
-    rowText: {
-      flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-      marginLeft: 14,
-    },
+  divider: {
+    height: 1,
 
-    rowTitle: {
-      fontSize: 16,
+    backgroundColor: '#F0F2F5',
 
-      fontWeight:
-        '600',
-
-      color:
-        COLORS.text,
-    },
-
-    rowSubtitle: {
-      fontSize: 13,
-
-      color:
-        COLORS.lightMuted,
-
-      marginTop: 3,
-    },
-
-    chevronBox: {
-      width: 30,
-      height: 30,
-
-      borderRadius: 15,
-
-      backgroundColor:
-        COLORS.navySoft,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-    },
-
-    divider: {
-      height: 1,
-
-      backgroundColor:
-        '#F0F2F5',
-
-      marginLeft: 72,
-    },
-
-    spacer: {
-      flex: 1,
-
-      minHeight: 48,
-    },
-
-    /* LOGOUT */
-
-    logoutButton: {
-      height: 60,
-
-      borderRadius: 17,
-
-      backgroundColor:
-        COLORS.dangerSoft,
-
-      borderWidth: 1,
-
-      borderColor:
-        COLORS.dangerBorder,
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      gap: 10,
-
-      shadowColor:
-        COLORS.dangerDark,
-
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-
-      shadowOpacity: 0.08,
-
-      shadowRadius: 10,
-
-      elevation: 2,
-    },
-
-    logoutButtonPressed: {
-      backgroundColor:
-        '#FEE2E2',
-
-      transform: [
-        {
-          scale: 0.99,
-        },
-      ],
-    },
-
-    logoutText: {
-      fontSize: 15,
-
-      fontWeight:
-        '700',
-
-      color:
-        COLORS.danger,
-    },
-  });
+    marginLeft: 72,
+  },
+});
