@@ -19,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, {
   Circle,
   Line,
-  Polyline,
+  Path,
   Text as SvgText,
 } from 'react-native-svg';
 
@@ -724,32 +724,6 @@ export default function ClassStatisticsScreen() {
                   'Klasse'}
               </Text>
             </View>
-
-            <View
-              style={
-                styles.sessionBadge
-              }
-            >
-              <Ionicons
-                name="document-text-outline"
-                size={14}
-                color={
-                  COLORS.navy
-                }
-              />
-
-              <Text
-                style={
-                  styles.sessionBadgeText
-                }
-              >
-                {sessions.length}{' '}
-                {sessions.length ===
-                1
-                  ? 'protokol'
-                  : 'protokoller'}
-              </Text>
-            </View>
           </View>
 
           {/* HOVEDTAL */}
@@ -1145,17 +1119,91 @@ function AttendanceChart({
     );
   }
 
-  const points =
-    data
-      .map(
-        (point) =>
-          `${getX(
-            point
-          )},${getY(
+  function createSmoothPath() {
+    if (data.length === 0) {
+      return '';
+    }
+
+    if (data.length === 1) {
+      return '';
+    }
+
+    const chartPoints =
+      data.map(
+        (point) => ({
+          x: getX(point),
+          y: getY(
             point.value
-          )}`
-      )
-      .join(' ');
+          ),
+        })
+      );
+
+    let path =
+      `M ${chartPoints[0].x} ${chartPoints[0].y}`;
+
+    const smoothness =
+      0.16;
+
+    for (
+      let index = 0;
+      index <
+      chartPoints.length - 1;
+      index++
+    ) {
+      const p0 =
+        chartPoints[
+          Math.max(
+            0,
+            index - 1
+          )
+        ];
+
+      const p1 =
+        chartPoints[
+          index
+        ];
+
+      const p2 =
+        chartPoints[
+          index + 1
+        ];
+
+      const p3 =
+        chartPoints[
+          Math.min(
+            chartPoints.length - 1,
+            index + 2
+          )
+        ];
+
+      const control1X =
+        p1.x +
+        (p2.x - p0.x) *
+          smoothness;
+
+      const control1Y =
+        p1.y +
+        (p2.y - p0.y) *
+          smoothness;
+
+      const control2X =
+        p2.x -
+        (p3.x - p1.x) *
+          smoothness;
+
+      const control2Y =
+        p2.y -
+        (p3.y - p1.y) *
+          smoothness;
+
+      path +=
+        ` C ${control1X} ${control1Y},` +
+        ` ${control2X} ${control2Y},` +
+        ` ${p2.x} ${p2.y}`;
+    }
+
+    return path;
+  }
 
   const labelIndexes =
     getChartLabelIndexes(
@@ -1265,9 +1313,9 @@ function AttendanceChart({
 
         {data.length >
           1 && (
-          <Polyline
-            points={
-              points
+          <Path
+            d={
+              createSmoothPath()
             }
             fill="none"
             stroke={

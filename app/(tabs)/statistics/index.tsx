@@ -45,7 +45,7 @@ export default function StatisticsScreen() {
       <Pressable
         onPress={() =>
           router.push(
-            '/(tabs)/statistics/classes'
+            '/statistics/classes'
           )
         }
         style={({ pressed }) => [
@@ -99,7 +99,7 @@ export default function StatisticsScreen() {
       <Pressable
         onPress={() =>
           router.push(
-            '/(tabs)/statistics/students'
+            '/statistics/students'
           )
         }
         style={({ pressed }) => [
@@ -121,9 +121,9 @@ export default function StatisticsScreen() {
           </Text>
 
           <Text style={styles.cardDescription}>
-            Vælg en elev og se personligt
-            fremmøde, fravær og udvikling
-            over tid.
+            Vælg en klasse og derefter en elev
+            for at se personligt fremmøde,
+            fravær og udvikling over tid.
           </Text>
 
           <View style={styles.cardMeta}>

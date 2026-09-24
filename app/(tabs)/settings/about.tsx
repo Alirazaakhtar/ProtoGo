@@ -1,5 +1,6 @@
 import {
   Alert,
+  Image,
   Linking,
   Pressable,
   ScrollView,
@@ -105,10 +106,6 @@ export default function AboutScreen() {
 
       {/* HEADER */}
 
-      <Text style={styles.eyebrow}>
-        Information
-      </Text>
-
       <Text style={styles.title}>
         Om ProtoGo
       </Text>
@@ -122,17 +119,11 @@ export default function AboutScreen() {
       {/* APP CARD */}
 
       <View style={styles.appCard}>
-        <View style={styles.logoBox}>
-          <Ionicons
-            name="clipboard-outline"
-            size={34}
-            color={COLORS.navy}
-          />
-        </View>
-
-        <Text style={styles.appName}>
-          ProtoGo
-        </Text>
+        <Image
+          source={require('../../../assets/images/protogo-logo.png')}
+          style={styles.appLogo}
+          resizeMode="contain"
+        />
 
         <Text style={styles.appDescription}>
           En enkel protokol-app til
@@ -308,6 +299,7 @@ const styles = StyleSheet.create({
 
   content: {
     flexGrow: 1,
+
     paddingHorizontal: 20,
     paddingTop: 70,
     paddingBottom: 50,
@@ -345,39 +337,28 @@ const styles = StyleSheet.create({
     borderRadius: 20,
 
     paddingHorizontal: 22,
-    paddingVertical: 26,
+    paddingVertical: 24,
 
     alignItems: 'center',
 
     shadowColor: '#000000',
+
     shadowOffset: {
       width: 0,
       height: 4,
     },
+
     shadowOpacity: 0.04,
     shadowRadius: 14,
 
     elevation: 1,
   },
 
-  logoBox: {
-    width: 66,
-    height: 66,
+  appLogo: {
+    width: 190,
+    height: 115,
 
-    borderRadius: 20,
-
-    backgroundColor: COLORS.navySoft,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    marginBottom: 15,
-  },
-
-  appName: {
-    fontSize: 23,
-    fontWeight: '700',
-    color: COLORS.text,
+    marginBottom: 4,
   },
 
   appDescription: {
@@ -387,7 +368,7 @@ const styles = StyleSheet.create({
 
     textAlign: 'center',
 
-    marginTop: 8,
+    marginTop: 4,
   },
 
   /* SECTIONS */
@@ -417,10 +398,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
 
     shadowColor: '#000000',
+
     shadowOffset: {
       width: 0,
       height: 4,
     },
+
     shadowOpacity: 0.04,
     shadowRadius: 14,
 
@@ -469,6 +452,7 @@ const styles = StyleSheet.create({
 
   rowDivider: {
     height: 1,
+
     backgroundColor: '#F0F2F5',
 
     marginLeft: 64,
@@ -483,10 +467,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
 
     shadowColor: '#000000',
+
     shadowOffset: {
       width: 0,
       height: 4,
     },
+
     shadowOpacity: 0.04,
     shadowRadius: 14,
 
@@ -534,6 +520,7 @@ const styles = StyleSheet.create({
 
   featureDivider: {
     height: 1,
+
     backgroundColor: '#F0F2F5',
 
     marginLeft: 71,
@@ -549,10 +536,12 @@ const styles = StyleSheet.create({
     padding: 16,
 
     shadowColor: '#000000',
+
     shadowOffset: {
       width: 0,
       height: 4,
     },
+
     shadowOpacity: 0.04,
     shadowRadius: 14,
 

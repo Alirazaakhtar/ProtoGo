@@ -6,6 +6,11 @@ export default function StatisticsLayout() {
       screenOptions={{
         headerShown: false,
       }}
-    />
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="classes" />
+      <Stack.Screen name="students/index" />
+      <Stack.Screen name="students/[studentId]" />
+    </Stack>
   );
 }
