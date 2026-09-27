@@ -126,8 +126,37 @@ export default function StudentScreen() {
         return;
       }
 
-      const newStudent =
-        data as Student;
+      const newStudent: Student = {
+        id:
+          data.id,
+
+        first_name:
+          data.first_name,
+
+        last_name:
+          data.last_name,
+
+        birth_date:
+          data.birth_date,
+
+        phone:
+          data.phone,
+
+        student_guardians:
+          (
+            data.student_guardians ??
+            []
+          ).map(
+            (link) => ({
+              relationship:
+                link.relationship,
+
+              guardians:
+                link.guardians?.[0] ??
+                null,
+            })
+          ),
+      };
 
       studentCache.set(
         studentId,

@@ -161,8 +161,43 @@ export default function RecentDetailsScreen() {
       return;
     }
 
-    const freshSession =
-      data as SessionDetails;
+    const freshSession: SessionDetails = {
+      id:
+        data.id,
+
+      session_date:
+        data.session_date,
+
+      created_at:
+        data.created_at,
+
+      classes:
+        data.classes?.[0] ??
+        null,
+
+      creator:
+        data.creator?.[0] ??
+        null,
+
+      attendance_records:
+        (
+          data.attendance_records ??
+          []
+        ).map(
+          (record) => ({
+            id:
+              record.id,
+
+            status:
+              record.status as
+                AttendanceStatus,
+
+            students:
+              record.students?.[0] ??
+              null,
+          })
+        ),
+    };
 
     sessionCache.set(
       sessionId,

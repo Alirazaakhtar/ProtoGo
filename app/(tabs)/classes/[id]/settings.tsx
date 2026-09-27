@@ -191,8 +191,22 @@ export default function ClassSettingsScreen() {
       return;
     }
 
-    const currentTeachers =
-      (members ?? []) as Teacher[];
+    const currentTeachers: Teacher[] =
+      (members ?? []).map(
+        (member) => ({
+          user_id:
+            member.user_id,
+
+          role:
+            member.role as
+              | 'owner'
+              | 'teacher',
+
+          profiles:
+            member.profiles?.[0] ??
+            null,
+        })
+      );
 
     const currentMember =
       currentTeachers.find(

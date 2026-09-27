@@ -157,9 +157,42 @@ export default function RecentsScreen() {
         return;
       }
 
-      const freshSessions =
-        (data ??
-          []) as RecentSession[];
+      const freshSessions: RecentSession[] =
+        (data ?? []).map(
+          (session) => ({
+            id:
+              session.id,
+
+            session_date:
+              session.session_date,
+
+            created_at:
+              session.created_at,
+
+            finalized_at:
+              session.finalized_at,
+
+            classes:
+              session.classes?.[0] ??
+              null,
+
+            creator:
+              session.creator?.[0] ??
+              null,
+
+            attendance_records:
+              (
+                session.attendance_records ??
+                []
+              ).map(
+                (record) => ({
+                  status:
+                    record.status as
+                      AttendanceStatus,
+                })
+              ),
+          })
+        );
 
       recentsCache =
         freshSessions;

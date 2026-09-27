@@ -1175,14 +1175,6 @@ export default function NotificationsScreen() {
             </View>
           )}
         </Pressable>
-
-        <Text
-          style={
-            styles.footer
-          }
-        >
-          © 2026 ProtoGo
-        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -1865,19 +1857,5 @@ const styles =
 
     disabled: {
       opacity: 0.5,
-    },
-
-    /* FOOTER */
-
-    footer: {
-      fontSize: 12,
-
-      color:
-        COLORS.lightMuted,
-
-      textAlign:
-        'center',
-
-      marginTop: 30,
     },
   });

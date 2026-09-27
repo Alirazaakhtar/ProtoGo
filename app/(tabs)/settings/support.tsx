@@ -886,16 +886,6 @@ export default function SupportScreen() {
             </View>
           </>
         )}
-
-        {/* FOOTER */}
-
-        <Text
-          style={
-            styles.footer
-          }
-        >
-          © 2026 ProtoGo
-        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -1481,18 +1471,5 @@ const styles =
 
       color:
         COLORS.white,
-    },
-
-    /* FOOTER */
-
-    footer: {
-      fontSize: 12,
-
-      color:
-        COLORS.lightMuted,
-
-      textAlign: 'center',
-
-      marginTop: 30,
     },
   });

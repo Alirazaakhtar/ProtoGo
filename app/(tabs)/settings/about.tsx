@@ -213,12 +213,6 @@ export default function AboutScreen() {
           description="Vælg dage og tidspunkt for påmindelser om at tage protokol."
         />
       </View>
-
-      {/* FOOTER */}
-
-      <Text style={styles.footer}>
-        © 2026 ProtoGo
-      </Text>
     </ScrollView>
   );
 }
@@ -614,16 +608,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.navy,
-  },
-
-  /* FOOTER */
-
-  footer: {
-    fontSize: 12,
-    color: COLORS.lightMuted,
-
-    textAlign: 'center',
-
-    marginTop: 30,
   },
 });
