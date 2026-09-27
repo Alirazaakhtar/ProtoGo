@@ -30,12 +30,24 @@
     "plugins": [
       "expo-router",
       [
-        "expo-splash-screen",
+       "expo-splash-screen",
         {
           "backgroundColor": "#FFFFFF",
-          "image": "./assets/images/protogo-splash.png",
-          "imageWidth": 220,
-          "resizeMode": "contain"
+          "image": "./assets/images/protogo-logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "ios": {
+            "backgroundColor": "#FFFFFF",
+            "image": "./assets/images/protogo-logo.png",
+            "imageWidth": 200,
+            "resizeMode": "contain"
+          },
+          "android": {
+            "backgroundColor": "#FFFFFF",
+            "image": "./assets/images/protogo-logo.png",
+            "imageWidth": 200,
+            "resizeMode": "contain"
+          }
         }
       ],
       "expo-font",

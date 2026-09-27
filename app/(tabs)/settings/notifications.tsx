@@ -258,9 +258,6 @@ export default function NotificationsScreen() {
 
         importance:
           Notifications.AndroidImportance.DEFAULT,
-
-        sound:
-          'default',
       }
     );
   }
@@ -528,8 +525,12 @@ export default function NotificationsScreen() {
                 body:
                   'Åbn ProtoGo og registrer dagens fremmøde.',
 
-                sound:
-                  'default',
+                ...(Platform.OS === 'ios'
+                  ? {
+                      sound:
+                        'default' as const,
+                    }
+                  : {}),
 
                 data: {
                   type:
@@ -1175,10 +1176,13 @@ export default function NotificationsScreen() {
           )}
         </Pressable>
 
-          <Text style={styles.footer}>
-                  © 2026 ProtoGo
-            </Text>
-
+        <Text
+          style={
+            styles.footer
+          }
+        >
+          © 2026 ProtoGo
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -1863,14 +1867,17 @@ const styles =
       opacity: 0.5,
     },
 
-      /* FOOTER */
+    /* FOOTER */
 
-  footer: {
-    fontSize: 12,
-    color: COLORS.lightMuted,
+    footer: {
+      fontSize: 12,
 
-    textAlign: 'center',
+      color:
+        COLORS.lightMuted,
 
-    marginTop: 30,
-  },
+      textAlign:
+        'center',
+
+      marginTop: 30,
+    },
   });
