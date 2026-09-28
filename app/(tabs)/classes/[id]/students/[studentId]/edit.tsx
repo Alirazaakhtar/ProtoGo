@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import {
+  useCallback,
+  useState,
+} from 'react';
 import BackButton from '@/app/components/BackButton';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,6 +20,7 @@ import {
 
 import {
   router,
+  useFocusEffect,
   useLocalSearchParams,
 } from 'expo-router';
 
@@ -83,89 +87,97 @@ export default function EditStudentScreen() {
   const [saving, setSaving] =
     useState(false);
 
-  useEffect(() => {
-    loadStudent();
-  }, [id, studentId]);
-
-  async function loadStudent() {
-    if (!id || !studentId) {
-      return;
-    }
-
-    try {
-      const {
-        data,
-        error,
-      } = await supabase
-        .from('students')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          birth_date,
-          phone
-        `)
-        .eq('id', studentId)
-        .eq('class_id', id)
-        .single();
-
-      if (error) {
-        throw error;
+  const loadStudent =
+    useCallback(async () => {
+      if (!id || !studentId) {
+        return;
       }
 
-      const freshData: StudentEditData = {
-        firstName:
-          data.first_name ?? '',
+      try {
+        const {
+          data,
+          error,
+        } = await supabase
+          .from('students')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            birth_date,
+            phone
+          `)
+          .eq('id', studentId)
+          .eq('class_id', id)
+          .single();
 
-        lastName:
-          data.last_name ?? '',
+        if (error) {
+          throw error;
+        }
 
-        birthDate:
-          data.birth_date
-            ? fromIsoBirthDate(
-                data.birth_date
-              )
-            : '',
+        const freshData: StudentEditData = {
+          firstName:
+            data.first_name ?? '',
 
-        phone:
-          data.phone ?? '',
-      };
+          lastName:
+            data.last_name ?? '',
 
-      studentEditCache.set(
-        studentId,
-        freshData
-      );
+          birthDate:
+            data.birth_date
+              ? fromIsoBirthDate(
+                  data.birth_date
+                )
+              : '',
 
-      setFirstName(
-        freshData.firstName
-      );
+          phone:
+            data.phone ?? '',
+        };
 
-      setLastName(
-        freshData.lastName
-      );
-
-      setBirthDate(
-        freshData.birthDate
-      );
-
-      setPhone(
-        freshData.phone
-      );
-    } catch (error) {
-      console.error(error);
-
-      if (
-        !studentEditCache.has(studentId)
-      ) {
-        Alert.alert(
-          'Fejl',
-          'Kunne ikke hente eleven.'
+        studentEditCache.set(
+          studentId,
+          freshData
         );
+
+        setFirstName(
+          freshData.firstName
+        );
+
+        setLastName(
+          freshData.lastName
+        );
+
+        setBirthDate(
+          freshData.birthDate
+        );
+
+        setPhone(
+          freshData.phone
+        );
+      } catch (error) {
+        console.error(error);
+
+        if (
+          !studentEditCache.has(
+            studentId
+          )
+        ) {
+          Alert.alert(
+            'Fejl',
+            'Kunne ikke hente eleven.'
+          );
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }
+    }, [
+      id,
+      studentId,
+    ]);
+
+useFocusEffect(
+  useCallback(() => {
+    void loadStudent();
+  }, [loadStudent])
+);
 
   function handleBirthDateChange(
     value: string

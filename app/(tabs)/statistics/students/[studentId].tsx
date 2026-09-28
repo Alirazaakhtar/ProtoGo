@@ -1,5 +1,5 @@
 import React, {
-  useEffect,
+  useCallback,
   useMemo,
   useState,
 } from 'react';
@@ -17,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import {
+  useFocusEffect,
   useLocalSearchParams,
 } from 'expo-router';
 
@@ -196,34 +197,8 @@ export default function StudentStatisticsDetailScreen() {
     setLoadingStats,
   ] = useState(false);
 
-  useEffect(() => {
-    if (!studentId) {
-      setLoading(false);
-      return;
-    }
-
-    loadStudentContext();
-  }, [
-    studentId,
-    parameterClassId,
-  ]);
-
-  useEffect(() => {
-    if (
-      !studentId ||
-      !resolvedClassId
-    ) {
-      return;
-    }
-
-    loadStatistics();
-  }, [
-    studentId,
-    resolvedClassId,
-    selectedPeriod.days,
-  ]);
-
-  async function loadStudentContext() {
+  const loadStudentContext =
+  useCallback(async () => {
     if (!studentId) {
       return;
     }
@@ -297,9 +272,13 @@ export default function StudentStatisticsDetailScreen() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [
+    studentId,
+    parameterClassId,
+  ]);
 
-  async function loadStatistics() {
+const loadStatistics =
+  useCallback(async () => {
     if (
       !studentId ||
       !resolvedClassId
@@ -413,7 +392,23 @@ export default function StudentStatisticsDetailScreen() {
         false
       );
     }
-  }
+  }, [
+    studentId,
+    resolvedClassId,
+    selectedPeriod.days,
+  ]);
+
+useFocusEffect(
+  useCallback(() => {
+    void loadStudentContext();
+  }, [loadStudentContext])
+);
+
+useFocusEffect(
+  useCallback(() => {
+    void loadStatistics();
+  }, [loadStatistics])
+);
 
   const stats =
     useMemo(() => {
@@ -661,7 +656,10 @@ export default function StudentStatisticsDetailScreen() {
       records,
     ]);
 
-  if (loading) {
+  if (
+  studentId &&
+  loading
+) {
     return (
       <View
         style={
@@ -1242,14 +1240,6 @@ function AttendanceChart({
   ] = useState<
     string | null
   >(null);
-
-  useEffect(() => {
-    setSelectedPointKey(
-      null
-    );
-  }, [
-    data,
-  ]);
 
   const selectedPoint =
     data.find(

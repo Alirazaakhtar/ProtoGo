@@ -76,13 +76,6 @@ export default function LoginScreen() {
     }
   }
 
-  function forgotPassword() {
-    Alert.alert(
-      'Glemt adgangskode',
-      'Denne funktion bliver tilføjet senere.'
-    );
-  }
-
   return (
     <KeyboardAvoidingView
       style={styles.container}

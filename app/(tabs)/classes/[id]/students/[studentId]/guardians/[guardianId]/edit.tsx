@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import {
+  useCallback,
+  useState,
+} from 'react';
 import BackButton from '@/app/components/BackButton';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,6 +20,7 @@ import {
 
 import {
   router,
+  useFocusEffect,
   useLocalSearchParams,
 } from 'expo-router';
 
@@ -101,136 +105,140 @@ export default function EditGuardianScreen() {
   const [saving, setSaving] =
     useState(false);
 
-  useEffect(() => {
-    loadGuardian();
-  }, [
-    guardianId,
-    studentId,
-  ]);
-
-  async function loadGuardian() {
-    if (
-      !guardianId ||
-      !studentId ||
-      !cacheKey
-    ) {
-      return;
-    }
-
-    try {
-      const {
-        data: guardian,
-        error: guardianError,
-      } = await supabase
-        .from('guardians')
-        .select(`
-          id,
-          full_name,
-          phone,
-          email
-        `)
-        .eq(
-          'id',
-          guardianId
-        )
-        .single();
-
-      if (guardianError) {
-        throw guardianError;
+  const loadGuardian =
+    useCallback(async () => {
+      if (
+        !guardianId ||
+        !studentId ||
+        !cacheKey
+      ) {
+        return;
       }
 
-      const {
-        data: relation,
-        error: relationError,
-      } = await supabase
-        .from(
-          'student_guardians'
-        )
-        .select(`
-          relationship
-        `)
-        .eq(
-          'student_id',
-          studentId
-        )
-        .eq(
-          'guardian_id',
-          guardianId
-        )
-        .single();
+      try {
+        const {
+          data: guardian,
+          error: guardianError,
+        } = await supabase
+          .from('guardians')
+          .select(`
+            id,
+            full_name,
+            phone,
+            email
+          `)
+          .eq(
+            'id',
+            guardianId
+          )
+          .single();
 
-      if (relationError) {
-        throw relationError;
-      }
+        if (guardianError) {
+          throw guardianError;
+        }
 
-      const {
-        firstName:
-          parsedFirstName,
-        lastName:
-          parsedLastName,
-      } = splitFullName(
-        guardian.full_name ?? ''
-      );
+        const {
+          data: relation,
+          error: relationError,
+        } = await supabase
+          .from(
+            'student_guardians'
+          )
+          .select(`
+            relationship
+          `)
+          .eq(
+            'student_id',
+            studentId
+          )
+          .eq(
+            'guardian_id',
+            guardianId
+          )
+          .single();
 
-      const freshData:
-        GuardianEditData = {
+        if (relationError) {
+          throw relationError;
+        }
+
+        const {
           firstName:
             parsedFirstName,
-
           lastName:
             parsedLastName,
-
-          relationship:
-            relation.relationship ?? '',
-
-          phone:
-            guardian.phone ?? '',
-
-          email:
-            guardian.email ?? '',
-        };
-
-      guardianEditCache.set(
-        cacheKey,
-        freshData
-      );
-
-      setFirstName(
-        freshData.firstName
-      );
-
-      setLastName(
-        freshData.lastName
-      );
-
-      setRelationship(
-        freshData.relationship
-      );
-
-      setPhone(
-        freshData.phone
-      );
-
-      setEmail(
-        freshData.email
-      );
-    } catch (error) {
-      console.error(error);
-
-      if (
-        !guardianEditCache.has(
-          cacheKey
-        )
-      ) {
-        Alert.alert(
-          'Fejl',
-          'Kunne ikke hente forælderen.'
+        } = splitFullName(
+          guardian.full_name ?? ''
         );
+
+        const freshData:
+          GuardianEditData = {
+            firstName:
+              parsedFirstName,
+
+            lastName:
+              parsedLastName,
+
+            relationship:
+              relation.relationship ?? '',
+
+            phone:
+              guardian.phone ?? '',
+
+            email:
+              guardian.email ?? '',
+          };
+
+        guardianEditCache.set(
+          cacheKey,
+          freshData
+        );
+
+        setFirstName(
+          freshData.firstName
+        );
+
+        setLastName(
+          freshData.lastName
+        );
+
+        setRelationship(
+          freshData.relationship
+        );
+
+        setPhone(
+          freshData.phone
+        );
+
+        setEmail(
+          freshData.email
+        );
+      } catch (error) {
+        console.error(error);
+
+        if (
+          !guardianEditCache.has(
+            cacheKey
+          )
+        ) {
+          Alert.alert(
+            'Fejl',
+            'Kunne ikke hente forælderen.'
+          );
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }
+    }, [
+      guardianId,
+      studentId,
+      cacheKey,
+    ]);
+
+useFocusEffect(
+  useCallback(() => {
+    void loadGuardian();
+  }, [loadGuardian])
+);
 
   async function saveGuardian() {
     if (

@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useState,
 } from 'react';
@@ -64,11 +65,8 @@ export default function ProfileScreen() {
     setSaving,
   ] = useState(false);
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  async function loadProfile() {
+const loadProfile =
+  useCallback(async () => {
     try {
       const {
         data: { user },
@@ -137,7 +135,11 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+useEffect(() => {
+  void loadProfile();
+}, [loadProfile]);
 
   async function saveProfile() {
     const cleanedFirstName =

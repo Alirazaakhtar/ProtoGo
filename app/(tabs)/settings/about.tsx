@@ -1,8 +1,5 @@
 import {
-  Alert,
   Image,
-  Linking,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,11 +8,8 @@ import {
 
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
-import * as Clipboard from 'expo-clipboard';
 
 import BackButton from '@/app/components/BackButton';
-
-const SUPPORT_EMAIL = 'protogo.support@proton.me';
 
 /*
  * Ret disse når ProtoGo udgives.
@@ -39,63 +33,6 @@ const COLORS = {
 };
 
 export default function AboutScreen() {
-  async function handleOpenEmail() {
-    try {
-      const url =
-        `mailto:${SUPPORT_EMAIL}` +
-        `?subject=${encodeURIComponent(
-          'ProtoGo'
-        )}`;
-
-      const canOpen =
-        await Linking.canOpenURL(url);
-
-      if (!canOpen) {
-        Alert.alert(
-          'Kunne ikke åbne mail',
-          SUPPORT_EMAIL
-        );
-
-        return;
-      }
-
-      await Linking.openURL(url);
-    } catch (error) {
-      console.error(
-        'Kunne ikke åbne mail:',
-        error
-      );
-
-      Alert.alert(
-        'Kunne ikke åbne mail',
-        SUPPORT_EMAIL
-      );
-    }
-  }
-
-  async function handleCopyEmail() {
-    try {
-      await Clipboard.setStringAsync(
-        SUPPORT_EMAIL
-      );
-
-      Alert.alert(
-        'Mail kopieret',
-        SUPPORT_EMAIL
-      );
-    } catch (error) {
-      console.error(
-        'Kunne ikke kopiere mail:',
-        error
-      );
-
-      Alert.alert(
-        'Kunne ikke kopiere',
-        'Mailadressen kunne ikke kopieres.'
-      );
-    }
-  }
-
   return (
     <ScrollView
       style={styles.container}

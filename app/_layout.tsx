@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -121,107 +122,10 @@ export default function RootLayout() {
   const optionalUpdateShown =
     useRef(false);
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function initializeApp() {
-      try {
-        const [sessionResult] =
-          await Promise.all([
-            supabase.auth.getSession(),
-
-            // Vis splash i minimum 1,5 sekund
-            new Promise<void>(
-              (resolve) => {
-                setTimeout(
-                  resolve,
-                  1500
-                );
-              }
-            ),
-          ]);
-
-        if (!mounted) {
-          return;
-        }
-
-        setSession(
-          sessionResult.data.session
-        );
-      } catch (error) {
-        console.error(
-          'Kunne ikke starte appen:',
-          error
-        );
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    initializeApp();
-
-    const {
-      data: { subscription },
-    } =
-      supabase.auth.onAuthStateChange(
-        (
-          _event,
-          session
-        ) => {
-          if (mounted) {
-            setSession(
-              session
-            );
-          }
-        }
-      );
-
-    return () => {
-      mounted = false;
-
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!loading) {
-      SplashScreen.hide();
-
-      void checkForUpdate();
-    }
-  }, [loading]);
-
-  /*
-   * TJEK IGEN NÅR APPEN BLIVER AKTIV
-   *
-   * Fx hvis brugeren trykker "Opdater",
-   * går til App Store / Play Store
-   * og derefter vender tilbage.
-   */
-  useEffect(() => {
-    const subscription =
-      AppState.addEventListener(
-        'change',
-        (state) => {
-          if (
-            state === 'active' &&
-            !loading
-          ) {
-            void checkForUpdate();
-          }
-        }
-      );
-
-    return () => {
-      subscription.remove();
-    };
-  }, [loading]);
-
-  async function openStore(
+const openStore = useCallback(
+  async (
     storeUrl: string | null
-  ) {
+  ) => {
     if (!storeUrl) {
       Alert.alert(
         'Opdatering',
@@ -246,9 +150,12 @@ export default function RootLayout() {
         'App-butikken kunne ikke åbnes. Prøv igen senere.'
       );
     }
-  }
+  },
+  []
+);
 
-  async function checkForUpdate() {
+  const checkForUpdate = useCallback(
+  async () => {
     if (
       updateCheckRunning.current
     ) {
@@ -405,7 +312,115 @@ export default function RootLayout() {
       updateCheckRunning.current =
         false;
     }
+    },
+  [openStore]
+);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function initializeApp() {
+      try {
+        const [sessionResult] =
+          await Promise.all([
+            supabase.auth.getSession(),
+
+            // Vis splash i minimum 1,5 sekund
+            new Promise<void>(
+              (resolve) => {
+                setTimeout(
+                  resolve,
+                  1500
+                );
+              }
+            ),
+          ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        setSession(
+          sessionResult.data.session
+        );
+      } catch (error) {
+        console.error(
+          'Kunne ikke starte appen:',
+          error
+        );
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    initializeApp();
+
+    const {
+      data: { subscription },
+    } =
+      supabase.auth.onAuthStateChange(
+        (
+          _event,
+          session
+        ) => {
+          if (mounted) {
+            setSession(
+              session
+            );
+          }
+        }
+      );
+
+    return () => {
+      mounted = false;
+
+      subscription.unsubscribe();
+    };
+  }, []);
+
+useEffect(() => {
+  if (!loading) {
+    SplashScreen.hide();
+
+    void checkForUpdate();
   }
+}, [
+  loading,
+  checkForUpdate,
+]);
+
+  /*
+   * TJEK IGEN NÅR APPEN BLIVER AKTIV
+   *
+   * Fx hvis brugeren trykker "Opdater",
+   * går til App Store / Play Store
+   * og derefter vender tilbage.
+   */
+  useEffect(() => {
+    const subscription =
+      AppState.addEventListener(
+        'change',
+        (state) => {
+          if (
+            state === 'active' &&
+            !loading
+          ) {
+            void checkForUpdate();
+          }
+        }
+      );
+
+    return () => {
+      subscription.remove();
+    };
+}, [
+  loading,
+  checkForUpdate,
+]);
+
+
 
   if (loading) {
     return null;

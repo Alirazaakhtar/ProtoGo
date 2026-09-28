@@ -1,5 +1,5 @@
 import {
-  useEffect,
+  useCallback,
   useMemo,
   useState,
 } from 'react';
@@ -18,7 +18,10 @@ import {
   View,
 } from 'react-native';
 
-import { useLocalSearchParams } from 'expo-router';
+import { 
+  useFocusEffect,
+  useLocalSearchParams
+ } from 'expo-router';
 
 import { supabase } from '@/lib/supabase';
 
@@ -108,11 +111,8 @@ export default function RecentDetailsScreen() {
     setDraftStatuses,
   ] = useState<DraftStatuses>({});
 
-  useEffect(() => {
-    loadSession();
-  }, [sessionId]);
-
-  async function loadSession() {
+ const loadSession =
+  useCallback(async () => {
     if (!sessionId) {
       return;
     }
@@ -211,7 +211,14 @@ export default function RecentDetailsScreen() {
     setLoading(
       false
     );
-  }
+  }, [sessionId]);
+
+useFocusEffect(
+  useCallback(() => {
+    void loadSession();
+  }, [loadSession])
+);
+
 
   function startEditing() {
     if (!session) {

@@ -1,5 +1,5 @@
 import React, {
-  useEffect,
+  useCallback,
   useMemo,
   useState,
 } from 'react';
@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 import BackButton from '@/app/components/BackButton';
 import { supabase } from '@/lib/supabase';
@@ -82,22 +82,8 @@ export default function StudentsStatisticsIndexScreen() {
     setLoadingStudents,
   ] = useState(false);
 
-  useEffect(() => {
-    loadClasses();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedClassId) {
-      setStudents([]);
-      return;
-    }
-
-    loadStudents();
-  }, [
-    selectedClassId,
-  ]);
-
-  async function loadClasses() {
+const loadClasses =
+  useCallback(async () => {
     try {
       setLoading(true);
 
@@ -124,13 +110,31 @@ export default function StudentsStatisticsIndexScreen() {
         freshClasses
       );
 
+      setSelectedClassId(
+        (currentClassId) => {
+          if (
+            currentClassId &&
+            freshClasses.some(
+              (schoolClass) =>
+                schoolClass.id ===
+                currentClassId
+            )
+          ) {
+            return currentClassId;
+          }
+
+          return (
+            freshClasses[0]?.id ??
+            null
+          );
+        }
+      );
+
       if (
-        freshClasses.length >
+        freshClasses.length ===
         0
       ) {
-        setSelectedClassId(
-          freshClasses[0].id
-        );
+        setStudents([]);
       }
     } catch (error) {
       console.error(
@@ -140,10 +144,12 @@ export default function StudentsStatisticsIndexScreen() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function loadStudents() {
+const loadStudents =
+  useCallback(async () => {
     if (!selectedClassId) {
+      setStudents([]);
       return;
     }
 
@@ -197,21 +203,21 @@ export default function StudentsStatisticsIndexScreen() {
         false
       );
     }
-  }
+  }, [
+    selectedClassId,
+  ]);
 
-  const selectedClass =
-    useMemo(
-      () =>
-        classes.find(
-          (schoolClass) =>
-            schoolClass.id ===
-            selectedClassId
-        ) ?? null,
-      [
-        classes,
-        selectedClassId,
-      ]
-    );
+useFocusEffect(
+  useCallback(() => {
+    void loadClasses();
+  }, [loadClasses])
+);
+
+useFocusEffect(
+  useCallback(() => {
+    void loadStudents();
+  }, [loadStudents])
+);
 
   const filteredStudents =
     useMemo(() => {

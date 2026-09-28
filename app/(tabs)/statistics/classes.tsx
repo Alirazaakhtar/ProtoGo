@@ -1,8 +1,10 @@
 import React, {
-  useEffect,
+  useCallback,
   useMemo,
   useState,
 } from 'react';
+
+import { useFocusEffect } from 'expo-router';
 
 import {
   ActivityIndicator,
@@ -147,22 +149,9 @@ export default function ClassStatisticsScreen() {
     setLoadingStats,
   ] = useState(false);
 
-  useEffect(() => {
-    loadClasses();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedClassId) {
-      return;
-    }
-
-    loadStatistics();
-  }, [
-    selectedClassId,
-    selectedPeriod.days,
-  ]);
-
-  async function loadClasses() {
+  
+  const loadClasses =
+  useCallback(async () => {
     try {
       const {
         data,
@@ -187,13 +176,25 @@ export default function ClassStatisticsScreen() {
         classData
       );
 
-      if (
-        classData.length > 0
-      ) {
-        setSelectedClassId(
-          classData[0].id
-        );
-      }
+      setSelectedClassId(
+        (currentClassId) => {
+          if (
+            currentClassId &&
+            classData.some(
+              (schoolClass) =>
+                schoolClass.id ===
+                currentClassId
+            )
+          ) {
+            return currentClassId;
+          }
+
+          return (
+            classData[0]?.id ??
+            null
+          );
+        }
+      );
     } catch (error) {
       console.error(
         'Kunne ikke hente klasser:',
@@ -202,9 +203,10 @@ export default function ClassStatisticsScreen() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function loadStatistics() {
+const loadStatistics =
+  useCallback(async () => {
     if (!selectedClassId) {
       return;
     }
@@ -341,7 +343,22 @@ export default function ClassStatisticsScreen() {
         false
       );
     }
-  }
+  }, [
+    selectedClassId,
+    selectedPeriod.days,
+  ]);
+
+useFocusEffect(
+  useCallback(() => {
+    void loadClasses();
+  }, [loadClasses])
+);
+
+useFocusEffect(
+  useCallback(() => {
+    void loadStatistics();
+  }, [loadStatistics])
+);
 
   const selectedClass =
     useMemo(
@@ -1029,16 +1046,25 @@ function AttendanceChart({
   width: number;
 }) {
   const [
-    selectedPoint,
-    setSelectedPoint,
-  ] = useState<
-    ChartPoint | null
-  >(null);
+  selectedPointKey,
+  setSelectedPointKey,
+] = useState<string | null>(
+  null
+);
 
-  useEffect(() => {
-    setSelectedPoint(null);
-  }, [data]);
-
+const selectedPoint =
+  useMemo(
+    () =>
+      data.find(
+        (point) =>
+          point.key ===
+          selectedPointKey
+      ) ?? null,
+    [
+      data,
+      selectedPointKey,
+    ]
+  );
   const height = 245;
 
   const left = 42;
@@ -1360,8 +1386,8 @@ function AttendanceChart({
                   r={15}
                   fill="transparent"
                   onPress={() =>
-                    setSelectedPoint(
-                      point
+                    setSelectedPointKey(
+                      point.key
                     )
                   }
                 />
@@ -1396,8 +1422,8 @@ function AttendanceChart({
                       : 3
                   }
                   onPress={() =>
-                    setSelectedPoint(
-                      point
+                    setSelectedPointKey(
+                      point.key
                     )
                   }
                 />

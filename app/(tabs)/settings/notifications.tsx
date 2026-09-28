@@ -1,5 +1,5 @@
 import {
-  useEffect,
+  useCallback,
   useState,
 } from 'react';
 
@@ -21,6 +21,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import { useFocusEffect } from 'expo-router';
 
 import BackButton from '@/app/components/BackButton';
 
@@ -152,11 +153,31 @@ export default function NotificationsScreen() {
     setSaving,
   ] = useState(false);
 
-  useEffect(() => {
-    void loadSettings();
+const setupAndroidChannel =
+  useCallback(async () => {
+    if (
+      Platform.OS !== 'android'
+    ) {
+      return;
+    }
+
+    await Notifications.setNotificationChannelAsync(
+      NOTIFICATION_CHANNEL_ID,
+      {
+        name:
+          'Protokolpåmindelser',
+
+        description:
+          'Påmindelser om at tage dagens protokol.',
+
+        importance:
+          Notifications.AndroidImportance.DEFAULT,
+      }
+    );
   }, []);
 
-  async function loadSettings() {
+const loadSettings =
+  useCallback(async () => {
     try {
       await setupAndroidChannel();
 
@@ -238,29 +259,13 @@ export default function NotificationsScreen() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [setupAndroidChannel]);
 
-  async function setupAndroidChannel() {
-    if (
-      Platform.OS !== 'android'
-    ) {
-      return;
-    }
-
-    await Notifications.setNotificationChannelAsync(
-      NOTIFICATION_CHANNEL_ID,
-      {
-        name:
-          'Protokolpåmindelser',
-
-        description:
-          'Påmindelser om at tage dagens protokol.',
-
-        importance:
-          Notifications.AndroidImportance.DEFAULT,
-      }
-    );
-  }
+useFocusEffect(
+  useCallback(() => {
+    void loadSettings();
+  }, [loadSettings])
+);
 
   function toggleDay(
     weekday: number
