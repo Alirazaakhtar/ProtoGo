@@ -15,7 +15,7 @@ import BackButton from '@/app/components/BackButton';
  * Ret disse når ProtoGo udgives.
  */
 const RELEASE_DATE = '01. oktober 2026';
-const LAST_UPDATED = '22. september 2026';
+const LAST_UPDATED = '01. oktober 2026';
 
 const APP_VERSION =
   Constants.expoConfig?.version ?? '1.0.0';
@@ -102,54 +102,6 @@ export default function AboutScreen() {
           value={LAST_UPDATED}
         />
       </View>
-
-      {/* ABOUT */}
-
-      <View style={styles.sectionDivider} />
-
-      <Text style={styles.sectionTitle}>
-        Hvad kan ProtoGo?
-      </Text>
-
-      <View style={styles.featureCard}>
-        <FeatureRow
-          icon="people-outline"
-          title="Klasser og elever"
-          description="Opret klasser, administrer elever og tilknyt forældrekontakter."
-        />
-
-        <View style={styles.featureDivider} />
-
-        <FeatureRow
-          icon="checkbox-outline"
-          title="Protokol"
-          description="Registrer fremmøde, fravær og forsinkelse hurtigt og enkelt."
-        />
-
-        <View style={styles.featureDivider} />
-
-        <FeatureRow
-          icon="time-outline"
-          title="Historik"
-          description="Se tidligere protokoller og rediger registreringer."
-        />
-
-        <View style={styles.featureDivider} />
-
-        <FeatureRow
-          icon="stats-chart-outline"
-          title="Statistik"
-          description="Få overblik over fremmøde for både klasser og enkelte elever."
-        />
-
-        <View style={styles.featureDivider} />
-
-        <FeatureRow
-          icon="notifications-outline"
-          title="Påmindelser"
-          description="Vælg dage og tidspunkt for påmindelser om at tage protokol."
-        />
-      </View>
     </ScrollView>
   );
 }
@@ -182,42 +134,6 @@ function InfoRow({
       <Text style={styles.infoValue}>
         {value}
       </Text>
-    </View>
-  );
-}
-
-type FeatureRowProps = {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  description: string;
-};
-
-function FeatureRow({
-  icon,
-  title,
-  description,
-}: FeatureRowProps) {
-  return (
-    <View style={styles.featureRow}>
-      <View style={styles.featureIcon}>
-        <Ionicons
-          name={icon}
-          size={20}
-          color={COLORS.navy}
-        />
-      </View>
-
-      <View style={styles.featureText}>
-        <Text style={styles.featureTitle}>
-          {title}
-        </Text>
-
-        <Text
-          style={styles.featureDescription}
-        >
-          {description}
-        </Text>
-      </View>
     </View>
   );
 }
