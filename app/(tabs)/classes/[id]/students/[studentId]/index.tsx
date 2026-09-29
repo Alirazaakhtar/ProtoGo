@@ -1,6 +1,9 @@
 import { useCallback, useState } from 'react';
+
 import BackButton from '@/app/components/BackButton';
+
 import { Ionicons } from '@expo/vector-icons';
+
 import * as Clipboard from 'expo-clipboard';
 
 import {
@@ -55,8 +58,7 @@ type Student = {
   student_guardians: GuardianLink[];
 };
 
-const studentCache =
-  new Map<string, Student>();
+const studentCache = new Map<string, Student>();
 
 export default function StudentScreen() {
   const { id, studentId } =
@@ -152,7 +154,7 @@ export default function StudentScreen() {
                 link.relationship,
 
               guardians:
-                link.guardians?.[0] ??
+                link.guardians ??
                 null,
             })
           ),
@@ -1298,6 +1300,7 @@ const styles =
       gap: 16,
 
       paddingHorizontal: 2,
+
       paddingVertical: 4,
     },
 
