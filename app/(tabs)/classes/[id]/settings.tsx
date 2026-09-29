@@ -72,6 +72,16 @@ type ClassSettingsCache = {
   isOwner: boolean;
 };
 
+function firstOrValue<T>(
+  value: T | T[] | null | undefined
+): T | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+}
+
 const classSettingsCache =
   new Map<string, ClassSettingsCache>();
 
@@ -192,21 +202,24 @@ export default function ClassSettingsScreen() {
     }
 
     const currentTeachers: Teacher[] =
-      (members ?? []).map(
-        (member) => ({
-          user_id:
-            member.user_id,
+  (members ?? []).map(
+    (member) => ({
+      user_id:
+        member.user_id,
 
-          role:
-            member.role as
-              | 'owner'
-              | 'teacher',
+      role:
+        member.role as
+          | 'owner'
+          | 'teacher',
 
-          profiles:
-            member.profiles?.[0] ??
-            null,
-        })
-      );
+      profiles:
+        firstOrValue<{
+          full_name: string;
+        }>(
+          member.profiles
+        ),
+    })
+  );
 
     const currentMember =
       currentTeachers.find(
