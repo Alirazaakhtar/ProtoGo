@@ -47,8 +47,11 @@ type SortOption =
 
 type RecentSession = {
   id: string;
+
   session_date: string;
+
   created_at: string;
+
   finalized_at: string | null;
 
   classes: {
@@ -65,11 +68,30 @@ type RecentSession = {
   }[];
 };
 
+/*
+ * Supabase kan type relationer som arrays,
+ * mens runtime-data i appen kan være et enkelt objekt.
+ *
+ * Denne funktion gør begge dele sikre.
+ */
+function firstOrValue<T>(
+  value:
+    | T
+    | T[]
+    | null
+    | undefined
+): T | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+}
+
 const SORT_OPTIONS: {
   key: SortOption;
   label: string;
-  icon:
-    keyof typeof Ionicons.glyphMap;
+  icon: keyof typeof Ionicons.glyphMap;
 }[] = [
   {
     key: 'newest',
@@ -84,13 +106,16 @@ const SORT_OPTIONS: {
 ];
 
 let recentsCache:
-  RecentSession[] | null = null;
+  | RecentSession[]
+  | null = null;
 
 export default function RecentsScreen() {
-  const [sessions, setSessions] =
-    useState<RecentSession[]>(
-      recentsCache ?? []
-    );
+  const [
+    sessions,
+    setSessions,
+  ] = useState<RecentSession[]>(
+    recentsCache ?? []
+  );
 
   const [
     search,
@@ -104,14 +129,19 @@ export default function RecentsScreen() {
     'newest'
   );
 
-  const [loading, setLoading] =
-    useState(
-      recentsCache === null
-    );
+  const [
+    loading,
+    setLoading,
+  ] = useState(
+    recentsCache === null
+  );
 
   const loadRecents =
     useCallback(async () => {
-      const { data, error } =
+      const {
+        data,
+        error,
+      } =
         await supabase
           .from(
             'attendance_sessions'
@@ -154,10 +184,12 @@ export default function RecentsScreen() {
         );
 
         setLoading(false);
+
         return;
       }
 
-      const freshSessions: RecentSession[] =
+      const freshSessions:
+        RecentSession[] =
         (data ?? []).map(
           (session) => ({
             id:
@@ -173,12 +205,19 @@ export default function RecentsScreen() {
               session.finalized_at,
 
             classes:
-              session.classes?.[0] ??
-              null,
+              firstOrValue<{
+                id: string;
+                name: string;
+              }>(
+                session.classes
+              ),
 
             creator:
-              session.creator?.[0] ??
-              null,
+              firstOrValue<{
+                full_name: string;
+              }>(
+                session.creator
+              ),
 
             attendance_records:
               (
@@ -222,7 +261,9 @@ export default function RecentsScreen() {
       let result =
         [...sessions];
 
-      if (normalizedSearch) {
+      if (
+        normalizedSearch
+      ) {
         result =
           result.filter(
             (session) => {
@@ -264,8 +305,10 @@ export default function RecentsScreen() {
                     'da-DK'
                   );
 
-              return searchableText.includes(
-                normalizedSearch
+              return (
+                searchableText.includes(
+                  normalizedSearch
+                )
               );
             }
           );
@@ -1053,6 +1096,7 @@ const styles =
       padding: 20,
 
       paddingTop: 70,
+
       paddingBottom: 70,
     },
 
@@ -1097,6 +1141,7 @@ const styles =
 
     searchLabelIcon: {
       width: 26,
+
       height: 26,
 
       borderRadius: 8,
@@ -1145,6 +1190,7 @@ const styles =
         '#E5E7EB',
 
       paddingLeft: 18,
+
       paddingRight: 48,
 
       fontSize: 15,
@@ -1160,6 +1206,7 @@ const styles =
       right: 14,
 
       width: 28,
+
       height: 28,
 
       alignItems:
@@ -1280,6 +1327,7 @@ const styles =
         '#EEF0F3',
 
       marginTop: 2,
+
       marginBottom: 22,
     },
 
@@ -1301,6 +1349,7 @@ const styles =
       gap: 16,
 
       paddingHorizontal: 2,
+
       paddingVertical: 4,
     },
 
@@ -1382,6 +1431,7 @@ const styles =
 
     metaDot: {
       width: 3,
+
       height: 3,
 
       borderRadius: 2,
@@ -1422,6 +1472,7 @@ const styles =
 
     chevron: {
       width: 34,
+
       height: 34,
 
       borderRadius: 17,
@@ -1456,6 +1507,7 @@ const styles =
       borderRadius: 14,
 
       paddingVertical: 11,
+
       paddingHorizontal: 8,
 
       alignItems:
@@ -1521,6 +1573,7 @@ const styles =
 
     emptyIcon: {
       width: 52,
+
       height: 52,
 
       borderRadius: 16,
@@ -1566,6 +1619,7 @@ const styles =
       marginTop: 16,
 
       paddingHorizontal: 14,
+
       paddingVertical: 9,
 
       borderRadius: 11,

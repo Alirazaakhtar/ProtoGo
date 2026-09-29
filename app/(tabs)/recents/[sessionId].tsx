@@ -162,42 +162,42 @@ export default function RecentDetailsScreen() {
     }
 
     const freshSession: SessionDetails = {
+  id: data.id,
+
+  session_date:
+    data.session_date,
+
+  created_at:
+    data.created_at,
+
+  classes:
+    Array.isArray(data.classes)
+      ? data.classes[0] ?? null
+      : data.classes ?? null,
+
+  creator:
+    Array.isArray(data.creator)
+      ? data.creator[0] ?? null
+      : data.creator ?? null,
+
+  attendance_records:
+    (
+      data.attendance_records ??
+      []
+    ).map((record) => ({
       id:
-        data.id,
+        record.id,
 
-      session_date:
-        data.session_date,
+      status:
+        record.status as
+          AttendanceStatus,
 
-      created_at:
-        data.created_at,
-
-      classes:
-        data.classes?.[0] ??
-        null,
-
-      creator:
-        data.creator?.[0] ??
-        null,
-
-      attendance_records:
-        (
-          data.attendance_records ??
-          []
-        ).map(
-          (record) => ({
-            id:
-              record.id,
-
-            status:
-              record.status as
-                AttendanceStatus,
-
-            students:
-              record.students?.[0] ??
-              null,
-          })
-        ),
-    };
+      students:
+        Array.isArray(record.students)
+          ? record.students[0] ?? null
+          : record.students ?? null,
+    })),
+};
 
     sessionCache.set(
       sessionId,

@@ -3,7 +3,6 @@ import { useCallback, useState } from 'react';
 import BackButton from '@/app/components/BackButton';
 
 import { Ionicons } from '@expo/vector-icons';
-
 import * as Clipboard from 'expo-clipboard';
 
 import {
@@ -58,7 +57,18 @@ type Student = {
   student_guardians: GuardianLink[];
 };
 
-const studentCache = new Map<string, Student>();
+function firstOrValue<T>(
+  value: T | T[] | null | undefined
+): T | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+}
+
+const studentCache =
+  new Map<string, Student>();
 
 export default function StudentScreen() {
   const { id, studentId } =
@@ -67,9 +77,10 @@ export default function StudentScreen() {
       studentId: string;
     }>();
 
-  const cachedStudent = studentId
-    ? studentCache.get(studentId)
-    : undefined;
+  const cachedStudent =
+    studentId
+      ? studentCache.get(studentId)
+      : undefined;
 
   const [student, setStudent] =
     useState<Student | null>(
@@ -106,8 +117,14 @@ export default function StudentScreen() {
               )
             )
           `)
-          .eq('id', studentId)
-          .eq('class_id', id)
+          .eq(
+            'id',
+            studentId
+          )
+          .eq(
+            'class_id',
+            id
+          )
           .single();
 
       if (error) {
@@ -154,8 +171,9 @@ export default function StudentScreen() {
                 link.relationship,
 
               guardians:
-                link.guardians ??
-                null,
+                firstOrValue<Guardian>(
+                  link.guardians
+                ),
             })
           ),
       };
@@ -169,9 +187,7 @@ export default function StudentScreen() {
         newStudent
       );
 
-      setLoading(
-        false
-      );
+      setLoading(false);
     }, [
       id,
       studentId,
@@ -892,9 +908,11 @@ type InfoRowProps = {
     keyof typeof Ionicons.glyphMap;
 
   label: string;
+
   value: string;
 
   onAction?: () => void;
+
   actionLabel?: string;
 
   last?: boolean;
@@ -1019,9 +1037,11 @@ function getAge(
 
   if (
     monthDifference < 0 ||
-    (monthDifference === 0 &&
+    (
+      monthDifference === 0 &&
       today.getDate() <
-        birth.getDate())
+        birth.getDate()
+    )
   ) {
     age -= 1;
   }
@@ -1036,9 +1056,8 @@ function formatDate(
     year,
     month,
     day,
-  ] = date.split(
-    '-'
-  );
+  ] =
+    date.split('-');
 
   if (
     !year ||
@@ -1064,6 +1083,7 @@ const styles =
       padding: 20,
 
       paddingTop: 70,
+
       paddingBottom: 60,
     },
 
@@ -1192,6 +1212,7 @@ const styles =
 
     infoIcon: {
       width: 40,
+
       height: 40,
 
       borderRadius: 12,
@@ -1233,6 +1254,7 @@ const styles =
 
     infoCopyButton: {
       width: 36,
+
       height: 36,
 
       borderRadius: 11,
@@ -1352,6 +1374,7 @@ const styles =
 
     guardianAvatar: {
       width: 42,
+
       height: 42,
 
       borderRadius: 21,
@@ -1466,6 +1489,7 @@ const styles =
 
     copyButton: {
       width: 34,
+
       height: 34,
 
       borderRadius: 10,
@@ -1655,6 +1679,7 @@ const styles =
 
     emptyIcon: {
       width: 52,
+
       height: 52,
 
       borderRadius: 16,
