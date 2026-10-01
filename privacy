@@ -1,0 +1,169 @@
+# Privatlivspolitik for ProtoGo
+
+**Sidst opdateret: 1. oktober 2026**
+
+Denne privatlivspolitik beskriver, hvordan **ProtoGo** indsamler, anvender, opbevarer og beskytter oplysninger i forbindelse med brugen af appen.
+
+ProtoGo udvikles og drives af:
+
+**Udvikler:** Tawakkul Apps 
+**Kontakt:** akhtar29dk@gmail.com
+
+## 1. Hvilke oplysninger behandler ProtoGo?
+
+ProtoGo er udviklet til klasseadministration og registrering af fremmøde.
+
+Afhængigt af hvordan appen anvendes, kan følgende oplysninger blive behandlet:
+
+### Bruger- og læreroplysninger
+
+- Navn
+- E-mailadresse
+- Bruger-ID
+- Tilknytning til klasser
+- Rolle i en klasse, eksempelvis ejer eller lærer
+
+### Klasseoplysninger
+
+- Klassenavn
+- Fag
+- Skoleår
+- Tilknyttede lærere
+
+### Elevoplysninger
+
+- Fornavn
+- Efternavn
+- Fødselsdato
+- Telefonnummer, hvis det angives
+- Klasse
+- Aktiv/inaktiv status
+
+### Forældre- og værgeoplysninger
+
+- Navn
+- Telefonnummer
+- E-mailadresse
+- Relation til eleven
+
+### Fremmødeoplysninger
+
+- Dato for protokol
+- Fremmødestatus, eksempelvis til stede, fraværende eller forsinket
+- Eventuelle noter til registreringen
+- Oplysninger om hvilken bruger der har oprettet eller ændret registreringen
+
+## 2. Hvordan anvendes oplysningerne?
+
+Oplysningerne anvendes udelukkende til funktioner, der er nødvendige for at levere ProtoGo.
+
+Dette omfatter blandt andet:
+
+- Login og brugeridentifikation
+- Administration af klasser
+- Administration af elever
+- Administration af lærere
+- Registrering og visning af fremmøde
+- Visning af tidligere protokoller
+- Administration af forældre- og værgeoplysninger
+- Samarbejde mellem lærere med adgang til samme klasse
+- Sikkerhed og adgangskontrol
+
+ProtoGo anvender ikke personoplysninger til målrettet annoncering.
+
+ProtoGo sælger ikke personoplysninger.
+
+## 3. Hvem kan se oplysningerne?
+
+Oplysninger i en klasse er kun beregnet til brugere, der har adgang til den pågældende klasse.
+
+En lærer med adgang til en klasse kan derfor få adgang til relevante oplysninger om klassens elever, fremmøde og andre lærere i klassen.
+
+Adgangen styres gennem brugerlogin og adgangskontrol i ProtoGo.
+
+## 4. Tredjepartstjenester
+
+ProtoGo anvender **Supabase** som teknisk backend.
+
+Supabase anvendes blandt andet til:
+
+- Brugerautentifikation
+- Database
+- Opbevaring og behandling af appdata
+- Adgangskontrol mellem brugere og data
+
+Supabase kan derfor behandle oplysninger på vegne af ProtoGo i det omfang, det er nødvendigt for at levere disse tjenester.
+
+Oplysninger deles ikke med tredjeparter til markedsføring eller annoncering.
+
+Oplysninger kan dog blive videregivet, hvis det kræves ved lov eller af en kompetent myndighed.
+
+## 5. Sikkerhed
+
+ProtoGo anvender tekniske adgangskontroller for at begrænse adgangen til oplysninger.
+
+Databasen anvender blandt andet adgangsregler og Row Level Security (RLS), så brugere kun får adgang til oplysninger, som de har tilladelse til at tilgå.
+
+Der arbejdes på at beskytte personoplysninger mod:
+
+- Uautoriseret adgang
+- Ændring
+- Tab
+- Misbrug
+- Uautoriseret videregivelse
+
+Ingen elektronisk tjeneste kan dog garantere fuldstændig sikkerhed.
+
+## 6. Opbevaring af oplysninger
+
+Oplysninger opbevares, så længe de er nødvendige for at levere ProtoGo eller opfylde relevante juridiske eller sikkerhedsmæssige krav.
+
+Oplysninger kan blive slettet, når:
+
+- En bruger sletter relevante oplysninger i appen
+- En klasse slettes
+- En brugerkonto slettes
+- En gyldig anmodning om sletning behandles
+- Oplysningerne ikke længere er nødvendige for det formål, de blev indsamlet til
+
+## 7. Sletning af konto og oplysninger
+
+Brugere kan anmode om at få deres ProtoGo-konto og tilknyttede personoplysninger slettet.
+
+Anmodning om sletning kan foretages via:
+
+**E-mail:** protogo.support@proton.me
+
+Når en konto slettes, slettes de personoplysninger, der er tilknyttet kontoen, medmindre bestemte oplysninger skal opbevares i en periode på grund af lovmæssige, sikkerhedsmæssige eller andre legitime krav.
+
+## 8. Oplysninger om elever og andre personer
+
+ProtoGo gør det muligt for autoriserede brugere at registrere oplysninger om elever samt forældre eller værger.
+
+Brugeren eller organisationen, der registrerer sådanne oplysninger, er ansvarlig for at sikre, at oplysningerne registreres og anvendes på et lovligt grundlag.
+
+Oplysningerne må kun registreres, når det er relevant for brugen af ProtoGo.
+
+## 9. Børn
+
+ProtoGo er et administrationsværktøj og er ikke beregnet til, at børn selv opretter og administrerer brugerkonti.
+
+Appen kan dog indeholde oplysninger om elever, som registreres af autoriserede brugere.
+
+Sådanne oplysninger behandles kun som en del af appens funktioner til klasse- og fremmødeadministration.
+
+## 10. Ændringer til privatlivspolitikken
+
+Denne privatlivspolitik kan blive opdateret, hvis ProtoGo får nye funktioner, ændrer sin behandling af oplysninger eller ændrer de tjenester, der anvendes.
+
+Den seneste version af privatlivspolitikken vil altid være tilgængelig på denne side.
+
+Datoen øverst på siden viser, hvornår privatlivspolitikken senest blev opdateret.
+
+## 11. Kontakt
+
+Hvis du har spørgsmål om denne privatlivspolitik, behandling af personoplysninger eller ønsker at anmode om sletning af oplysninger, kan du kontakte:
+
+**Ali Raza**
+
+**E-mail:** akhtar29dk@gmail.com
