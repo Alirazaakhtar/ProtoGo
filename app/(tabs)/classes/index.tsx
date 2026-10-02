@@ -54,6 +54,8 @@ type AttendanceStatus =
 
 type AttendanceSessionSummary = {
   class_id: string;
+  session_date: string;
+  created_at: string;
 
   attendance_records: {
     status: AttendanceStatus;
@@ -170,6 +172,8 @@ export default function HomeScreen() {
           )
           .select(`
             class_id,
+            session_date,
+            created_at,
 
             attendance_records (
               status
@@ -179,6 +183,18 @@ export default function HomeScreen() {
             'finalized_at',
             'is',
             null
+          )
+          .order(
+            'session_date',
+            {
+              ascending: false,
+            }
+          )
+          .order(
+            'created_at',
+            {
+              ascending: false,
+            }
           ),
       ]);
 
@@ -234,38 +250,45 @@ export default function HomeScreen() {
         const schoolClass of
         newClasses
       ) {
-        const classSessions =
-          attendanceSessions.filter(
+        /*
+         * attendanceSessions er sorteret
+         * med nyeste protokol først.
+         *
+         * Derfor er den første session,
+         * der matcher klassen, klassens
+         * seneste afsluttede protokol.
+         */
+        const latestSession =
+          attendanceSessions.find(
             (session) =>
               session.class_id ===
               schoolClass.id
-          );
+          ) ?? null;
 
-        let totalRegistrations = 0;
-        let totalAttendance = 0;
+        if (!latestSession) {
+          newAttendancePercentages[
+            schoolClass.id
+          ] = null;
 
-        for (
-          const session of
-          classSessions
-        ) {
-          for (
-            const record of
-            session
-              .attendance_records ??
-            []
-          ) {
-            totalRegistrations += 1;
+          continue;
+        }
 
-            if (
+        const latestRecords =
+          latestSession
+            .attendance_records ??
+          [];
+
+        const totalRegistrations =
+          latestRecords.length;
+
+        const totalAttendance =
+          latestRecords.filter(
+            (record) =>
               record.status ===
                 'present' ||
               record.status ===
                 'late'
-            ) {
-              totalAttendance += 1;
-            }
-          }
-        }
+          ).length;
 
         newAttendancePercentages[
           schoolClass.id
@@ -276,7 +299,7 @@ export default function HomeScreen() {
                   totalRegistrations) *
                   100
               )
-            : null;
+            : 0;
       }
 
       homeCache = {
@@ -829,7 +852,7 @@ export default function HomeScreen() {
                       </View>
                     </View>
 
-                    {/* FREMMØDE */}
+                    {/* FREMMØDE FRA SENESTE PROTOKOL */}
 
                     <View
                       style={
@@ -1235,6 +1258,7 @@ const styles =
       gap: 16,
 
       paddingHorizontal: 2,
+
       paddingVertical: 4,
     },
 
