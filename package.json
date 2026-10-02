@@ -15,7 +15,9 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "doctor": "npx expo-doctor@latest",
-    "check": "npx expo install --check"
+    "check": "npx expo install --check",
+    "build:aab": "eas build --platform android --profile production",
+    "builds": "eas build:list --platform android --profile production --limit 3"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
