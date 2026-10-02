@@ -91,6 +91,21 @@ export default function ClassScreen() {
     setAbsencePercentage,
   ] = useState<number | null>(null);
 
+  const [
+    latestTotalStudents,
+    setLatestTotalStudents,
+  ] = useState<number | null>(null);
+
+  const [
+    latestAttendanceCount,
+    setLatestAttendanceCount,
+  ] = useState<number | null>(null);
+
+  const [
+    latestAbsentCount,
+    setLatestAbsentCount,
+  ] = useState<number | null>(null);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -138,7 +153,14 @@ export default function ClassScreen() {
             'finalized_at',
             'is',
             null
-          ),
+          )
+          .order('session_date', {
+            ascending: false,
+          })
+          .order('created_at', {
+            ascending: false,
+          })
+          .limit(1),
       ]);
 
       if (classResult.error) {
@@ -178,51 +200,55 @@ export default function ClassScreen() {
           : ((attendanceResult.data ??
               []) as AttendanceSession[]);
 
-      let totalRegistrations = 0;
+      const latestSession =
+        attendanceSessions[0] ?? null;
+
+      const latestRecords =
+        latestSession?.attendance_records ?? [];
+
+      const totalRegistrations =
+        latestSession
+          ? latestRecords.length
+          : null;
+
       let totalAttendance = 0;
       let totalAbsence = 0;
 
-      for (
-        const session of attendanceSessions
-      ) {
-        for (
-          const record of
-          session.attendance_records ?? []
+      for (const record of latestRecords) {
+        if (
+          record.status === 'present' ||
+          record.status === 'late'
         ) {
-          totalRegistrations += 1;
+          totalAttendance += 1;
+        }
 
-          if (
-            record.status ===
-              'present' ||
-            record.status === 'late'
-          ) {
-            totalAttendance += 1;
-          }
-
-          if (
-            record.status === 'absent'
-          ) {
-            totalAbsence += 1;
-          }
+        if (
+          record.status === 'absent'
+        ) {
+          totalAbsence += 1;
         }
       }
 
       const attendance =
-        totalRegistrations > 0
-          ? Math.round(
-              (totalAttendance /
-                totalRegistrations) *
-                100
-            )
+        totalRegistrations !== null
+          ? totalRegistrations > 0
+            ? Math.round(
+                (totalAttendance /
+                  totalRegistrations) *
+                  100
+              )
+            : 0
           : null;
 
       const absence =
-        totalRegistrations > 0
-          ? Math.round(
-              (totalAbsence /
-                totalRegistrations) *
-                100
-            )
+        totalRegistrations !== null
+          ? totalRegistrations > 0
+            ? Math.round(
+                (totalAbsence /
+                  totalRegistrations) *
+                  100
+              )
+            : 0
           : null;
 
       setSchoolClass(classData);
@@ -237,6 +263,22 @@ export default function ClassScreen() {
 
       setAbsencePercentage(
         absence
+      );
+
+      setLatestTotalStudents(
+        totalRegistrations
+      );
+
+      setLatestAttendanceCount(
+        latestSession
+          ? totalAttendance
+          : null
+      );
+
+      setLatestAbsentCount(
+        latestSession
+          ? totalAbsence
+          : null
       );
 
       setLoading(false);
@@ -460,7 +502,33 @@ export default function ClassScreen() {
         </Pressable>
       </View>
 
-      {/* OVERBLIK */}
+      {/* SENESTE PROTOKOL */}
+
+      <View
+        style={
+          styles.latestProtocolHeader
+        }
+      >
+        <Ionicons
+          name="time-outline"
+          size={14}
+          color={
+            COLORS.navy
+          }
+        />
+
+        <Text
+          style={
+            styles.latestProtocolText
+          }
+        >
+          {latestTotalStudents !== null
+            ? 'Seneste protokol for klassen'
+            : 'Ingen afsluttet protokol endnu'}
+        </Text>
+      </View>
+
+      {/* STATISTIK */}
 
       <View
         style={
@@ -491,7 +559,9 @@ export default function ClassScreen() {
               styles.statValue
             }
           >
-            {students.length}
+            {latestTotalStudents !== null
+              ? latestTotalStudents
+              : '–'}
           </Text>
 
           <Text
@@ -538,7 +608,13 @@ export default function ClassScreen() {
               styles.statLabel
             }
           >
-            Fremmøde
+            {latestAttendanceCount !== null
+              ? `${latestAttendanceCount} ${
+                  latestAttendanceCount === 1
+                    ? 'fremmødt'
+                    : 'fremmødte'
+                }`
+              : 'Fremmøde'}
           </Text>
         </View>
 
@@ -577,7 +653,9 @@ export default function ClassScreen() {
               styles.statLabel
             }
           >
-            Fravær
+            {latestAbsentCount !== null
+              ? `${latestAbsentCount} fraværende`
+              : 'Fravær'}
           </Text>
         </View>
       </View>
@@ -1142,7 +1220,33 @@ const styles =
       marginTop: 2,
     },
 
-    /* OVERBLIK */
+    /* SENESTE PROTOKOL */
+
+    latestProtocolHeader: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 5,
+
+      paddingHorizontal: 2,
+
+      marginBottom: 6,
+    },
+
+    latestProtocolText: {
+      fontSize: 12,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.muted,
+    },
+
+    /* STATISTIK */
 
     statsRow: {
       flexDirection:
@@ -1228,6 +1332,9 @@ const styles =
         COLORS.muted,
 
       marginTop: 3,
+
+      textAlign:
+        'center',
     },
 
     /* PROTOKOL */
