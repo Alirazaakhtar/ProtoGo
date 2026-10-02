@@ -1,5 +1,7 @@
 import {
   Image,
+  Linking,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +19,9 @@ import BackButton from '@/app/components/BackButton';
 const RELEASE_DATE = '01. oktober 2026';
 const LAST_UPDATED = '01. oktober 2026';
 
+const PRIVACY_POLICY_URL =
+  'https://cpsqmqvmfuewxnshursb.supabase.co/storage/v1/object/public/public-assets/privacy.txt';
+
 const APP_VERSION =
   Constants.expoConfig?.version ?? '1.0.0';
 
@@ -33,6 +38,12 @@ const COLORS = {
 };
 
 export default function AboutScreen() {
+  async function openPrivacyPolicy() {
+    await Linking.openURL(
+      PRIVACY_POLICY_URL
+    );
+  }
+
   return (
     <ScrollView
       style={styles.container}
@@ -102,6 +113,57 @@ export default function AboutScreen() {
           value={LAST_UPDATED}
         />
       </View>
+
+      {/* PRIVATLIV */}
+
+      <View style={styles.sectionDivider} />
+
+      <Text style={styles.sectionTitle}>
+        Privatliv
+      </Text>
+
+      <Pressable
+        onPress={openPrivacyPolicy}
+        accessibilityRole="link"
+        accessibilityLabel="Åbn privatlivspolitik"
+        style={({ pressed }) => [
+          styles.privacyCard,
+          pressed &&
+            styles.privacyCardPressed,
+        ]}
+      >
+        <View style={styles.privacyLeft}>
+          <View style={styles.privacyIcon}>
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={20}
+              color={COLORS.navy}
+            />
+          </View>
+
+          <View style={styles.privacyText}>
+            <Text style={styles.privacyTitle}>
+              Privatlivspolitik
+            </Text>
+
+            <Text
+              style={
+                styles.privacyDescription
+              }
+            >
+              Læs hvordan ProtoGo
+              behandler og beskytter
+              oplysninger.
+            </Text>
+          </View>
+        </View>
+
+        <Ionicons
+          name="open-outline"
+          size={19}
+          color={COLORS.muted}
+        />
+      </Pressable>
     </ScrollView>
   );
 }
@@ -303,6 +365,80 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F2F5',
 
     marginLeft: 64,
+  },
+
+  /* PRIVACY */
+
+  privacyCard: {
+    minHeight: 76,
+
+    backgroundColor: COLORS.white,
+
+    borderRadius: 20,
+
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+
+    shadowColor: '#000000',
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    shadowOpacity: 0.04,
+    shadowRadius: 14,
+
+    elevation: 1,
+  },
+
+  privacyCardPressed: {
+    opacity: 0.7,
+  },
+
+  privacyLeft: {
+    flex: 1,
+
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    marginRight: 12,
+  },
+
+  privacyIcon: {
+    width: 42,
+    height: 42,
+
+    borderRadius: 13,
+
+    backgroundColor: COLORS.navySoft,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    marginRight: 13,
+  },
+
+  privacyText: {
+    flex: 1,
+  },
+
+  privacyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+
+  privacyDescription: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: COLORS.muted,
+
+    marginTop: 3,
   },
 
   /* FEATURES */
