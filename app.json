@@ -32,7 +32,7 @@
       "icon": "./assets/images/icon.png",
 
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/splash-icon.png",
+        "foregroundImage": "./assets/images/icon-transparent.png",
         "backgroundColor": "#FFFFFF"
       },
 
@@ -44,7 +44,7 @@
     "web": {
       "output": "static",
 
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon.png"
     },
 
     "plugins": [
@@ -57,7 +57,7 @@
 
           "image": "./assets/images/splash-icon.png",
 
-          "imageWidth": 200,
+          "imageWidth": 180,
 
           "resizeMode": "contain",
 
@@ -66,7 +66,7 @@
 
             "image": "./assets/images/splash-icon.png",
 
-            "imageWidth": 200,
+            "imageWidth": 180,
 
             "resizeMode": "contain"
           },
@@ -76,7 +76,7 @@
 
             "image": "./assets/images/splash-icon.png",
 
-            "imageWidth": 200,
+            "imageWidth": 180,
 
             "resizeMode": "contain"
           }

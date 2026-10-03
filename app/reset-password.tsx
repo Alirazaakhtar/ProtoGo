@@ -329,7 +329,7 @@ export default function ResetPasswordScreen() {
 
         <View style={styles.header}>
           <Image
-            source={require('../assets/images/protogo-logo.png')}
+            source={require('../assets/images/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -833,8 +833,8 @@ const styles = StyleSheet.create({
   },
 
   logo: {
-    width: 190,
-    height: 125,
+    width: 240,
+    height: 175,
 
     marginBottom: 18,
   },

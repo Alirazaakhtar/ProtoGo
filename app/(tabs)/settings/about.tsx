@@ -68,7 +68,7 @@ export default function AboutScreen() {
 
       <View style={styles.appCard}>
         <Image
-          source={require('../../../assets/images/protogo-logo.png')}
+          source={require('../../../assets/images/logo.png')}
           style={styles.appLogo}
           resizeMode="contain"
         />
@@ -264,8 +264,8 @@ const styles = StyleSheet.create({
   },
 
   appLogo: {
-    width: 190,
-    height: 115,
+    width: 240,
+    height: 175,
 
     marginBottom: 4,
   },

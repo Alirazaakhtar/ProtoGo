@@ -216,7 +216,7 @@ export default function SignupScreen() {
           }
         >
           <Image
-            source={require('../assets/images/protogo-logo.png')}
+            source={require('../assets/images/logo.png')}
             style={
               styles.logo
             }
@@ -587,8 +587,8 @@ const styles =
     },
 
     logo: {
-      width: 185,
-      height: 120,
+      width: 240,
+      height: 175,
 
       marginBottom: 16,
     },
