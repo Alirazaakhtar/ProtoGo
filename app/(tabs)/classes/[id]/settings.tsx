@@ -137,6 +137,9 @@ export default function ClassSettingsScreen() {
     setCreatingNewYear,
   ] = useState(false);
 
+  const [leavingClass, setLeavingClass] =
+    useState(false);
+
   const loadData = useCallback(async () => {
     if (!id) {
       return;
@@ -202,24 +205,24 @@ export default function ClassSettingsScreen() {
     }
 
     const currentTeachers: Teacher[] =
-  (members ?? []).map(
-    (member) => ({
-      user_id:
-        member.user_id,
+      (members ?? []).map(
+        (member) => ({
+          user_id:
+            member.user_id,
 
-      role:
-        member.role as
-          | 'owner'
-          | 'teacher',
+          role:
+            member.role as
+              | 'owner'
+              | 'teacher',
 
-      profiles:
-        firstOrValue<{
-          full_name: string;
-        }>(
-          member.profiles
-        ),
-    })
-  );
+          profiles:
+            firstOrValue<{
+              full_name: string;
+            }>(
+              member.profiles
+            ),
+        })
+      );
 
     const currentMember =
       currentTeachers.find(
@@ -331,7 +334,9 @@ export default function ClassSettingsScreen() {
         classSettingsCache.set(id, {
           classData:
             updatedClass,
+
           teachers,
+
           isOwner,
         });
 
@@ -904,6 +909,118 @@ export default function ClassSettingsScreen() {
     );
   }
 
+  function leaveClass() {
+    if (
+      !id ||
+      isOwner ||
+      leavingClass
+    ) {
+      return;
+    }
+
+    Alert.alert(
+      'Forlad klasse',
+      `Er du sikker på, at du vil forlade ${
+        classData?.name ?? 'klassen'
+      }?\n\nDu mister adgang til klassen.`,
+      [
+        {
+          text: 'Annuller',
+          style: 'cancel',
+        },
+        {
+          text: 'Forlad klasse',
+          style: 'destructive',
+
+          onPress: () => {
+            void confirmLeaveClass();
+          },
+        },
+      ]
+    );
+  }
+
+  async function confirmLeaveClass() {
+    if (!id || isOwner) {
+      return;
+    }
+
+    try {
+      setLeavingClass(true);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (
+        userError ||
+        !user
+      ) {
+        Alert.alert(
+          'Fejl',
+          'Du er ikke logget ind.'
+        );
+
+        return;
+      }
+
+      const {
+        data: membership,
+        error: membershipError,
+      } = await supabase
+        .from('class_members')
+        .select('role')
+        .eq('class_id', id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (membershipError) {
+        Alert.alert(
+          'Kunne ikke forlade klassen',
+          membershipError.message
+        );
+
+        return;
+      }
+
+      if (
+        !membership ||
+        membership.role !== 'teacher'
+      ) {
+        Alert.alert(
+          'Kunne ikke forlade klassen',
+          'Kun lærere, der ikke er ejer af klassen, kan forlade den.'
+        );
+
+        return;
+      }
+
+      const { error: deleteError } =
+        await supabase
+          .from('class_members')
+          .delete()
+          .eq('class_id', id)
+          .eq('user_id', user.id)
+          .eq('role', 'teacher');
+
+      if (deleteError) {
+        Alert.alert(
+          'Kunne ikke forlade klassen',
+          deleteError.message
+        );
+
+        return;
+      }
+
+      classSettingsCache.delete(id);
+
+      router.replace('/(tabs)');
+    } finally {
+      setLeavingClass(false);
+    }
+  }
+
   if (loading && !classData) {
     return (
       <View
@@ -1412,12 +1529,91 @@ export default function ClassSettingsScreen() {
 
       {/* STREG UNDER LÆRERE */}
 
-      {isOwner && (
+      <View
+        style={
+          styles.sectionDivider
+        }
+      />
+
+      {/* FORLAD KLASSE */}
+
+      {!isOwner && (
         <View
           style={
-            styles.sectionDivider
+            styles.dangerZone
           }
-        />
+        >
+          <View
+            style={
+              styles.dangerTitleRow
+            }
+          >
+
+            <Text
+              style={
+                styles.dangerTitle
+              }
+            >
+              Forlad klasse
+            </Text>
+          </View>
+
+          <Text
+            style={
+              styles.dangerText
+            }
+          >
+            Du mister adgang til klassen
+          </Text>
+
+          <Pressable
+            onPress={
+              leaveClass
+            }
+            disabled={
+              leavingClass
+            }
+            style={({
+              pressed,
+            }) => [
+              styles.deleteClassButton,
+
+              pressed &&
+                !leavingClass &&
+                styles.pressed,
+
+              leavingClass &&
+                styles.disabled,
+            ]}
+          >
+            {leavingClass ? (
+              <ActivityIndicator
+                size="small"
+                color="#FFFFFF"
+              />
+            ) : (
+              <View
+                style={
+                  styles.buttonContent
+                }
+              >
+                <Ionicons
+                  name="exit-outline"
+                  size={19}
+                  color="#FFFFFF"
+                />
+
+                <Text
+                  style={
+                    styles.deleteClassButtonText
+                  }
+                >
+                  Forlad klasse
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
       )}
 
       {/* NYT SKOLEÅR */}
@@ -2474,7 +2670,7 @@ const styles =
         'center',
     },
 
-    /* SLET KLASSE */
+    /* SLET KLASSE / FORLAD KLASSE */
 
     dangerZone: {
       backgroundColor:
