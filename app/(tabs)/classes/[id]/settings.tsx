@@ -30,6 +30,7 @@ const COLORS = {
   muted: '#6B7280',
   lightMuted: '#9CA3AF',
 
+  soft: '#F5F6F8',
   white: '#FFFFFF',
 };
 
@@ -342,60 +343,137 @@ export default function ClassSettingsScreen() {
     if (
       !id ||
       !isOwner ||
+      !classData ||
       resettingProtocolData
     ) {
       return;
     }
 
+    const nextSchoolYear =
+      getNextSchoolYear(
+        classData.school_year
+      );
+
+    if (!nextSchoolYear) {
+      Alert.alert(
+        'Skoleår mangler',
+        'Klassen skal have et gyldigt skoleår, fx 2026/2027, før du kan starte et nyt skoleår.'
+      );
+
+      return;
+    }
+
     Alert.alert(
-      'Nulstil protokoldata',
-      `Er du sikker på, at du vil nulstille alle protokoldata for ${
-        classData?.name ?? 'klassen'
-      }?\n\nAlle protokoller, fremmøde og fravær bliver permanent slettet. Elever og lærere bliver ikke slettet.\n\nDette kan ikke fortrydes.`,
+      'Start nyt skoleår',
+      `${classData.name} ændres til skoleåret ${nextSchoolYear}.\n\nAlle protokoller, fremmøde og fravær bliver permanent slettet. Elever og lærere bevares.\n\nDette kan ikke fortrydes.`,
       [
         {
           text: 'Annuller',
           style: 'cancel',
         },
         {
-          text: 'Nulstil',
+          text: 'Start nyt skoleår',
           style: 'destructive',
 
           onPress: () => {
-            void confirmResetProtocolData();
+            void confirmResetProtocolData(
+              nextSchoolYear
+            );
           },
         },
       ]
     );
   }
 
-  async function confirmResetProtocolData() {
-    if (!id || !isOwner) {
+  async function confirmResetProtocolData(
+    nextSchoolYear: string
+  ) {
+    if (
+      !id ||
+      !isOwner ||
+      !classData
+    ) {
       return;
     }
 
     try {
       setResettingProtocolData(true);
 
-      const { error } = await supabase.rpc(
+      /*
+       * 1. NULSTIL PROTOKOLDATA
+       */
+
+      const {
+        error: resetError,
+      } = await supabase.rpc(
         'reset_class_protocol_data',
         {
           p_class_id: id,
         }
       );
 
-      if (error) {
+      if (resetError) {
         Alert.alert(
-          'Kunne ikke nulstille protokoldata',
-          error.message
+          'Kunne ikke starte nyt skoleår',
+          resetError.message
         );
 
         return;
       }
 
+      /*
+       * 2. OPDATER SKOLEÅR
+       */
+
+      const {
+        error: yearError,
+      } = await supabase
+        .from('classes')
+        .update({
+          school_year:
+            nextSchoolYear,
+        })
+        .eq('id', id);
+
+      if (yearError) {
+        Alert.alert(
+          'Protokoldata nulstillet',
+          `Protokoldata blev nulstillet, men skoleåret kunne ikke ændres til ${nextSchoolYear}.\n\n${yearError.message}`
+        );
+
+        return;
+      }
+
+      /*
+       * 3. OPDATER LOKAL DATA
+       */
+
+      const updatedClass: ClassData = {
+        ...classData,
+        school_year:
+          nextSchoolYear,
+      };
+
+      setClassData(
+        updatedClass
+      );
+
+      setSchoolYear(
+        nextSchoolYear
+      );
+
+      classSettingsCache.set(id, {
+        classData:
+          updatedClass,
+
+        teachers,
+
+        isOwner,
+      });
+
       Alert.alert(
-        'Protokoldata nulstillet',
-        'Alle protokoller og fremmødedata er slettet. Elever og lærere er bevaret.'
+        'Nyt skoleår startet',
+        `Klassen er nu klar til ${nextSchoolYear}.\n\nElever og lærere er bevaret, og alle protokoldata er nulstillet.`
       );
     } finally {
       setResettingProtocolData(false);
@@ -610,13 +688,14 @@ export default function ClassSettingsScreen() {
         return;
       }
 
-      const { error: deleteError } =
-        await supabase
-          .from('class_members')
-          .delete()
-          .eq('class_id', id)
-          .eq('user_id', user.id)
-          .eq('role', 'teacher');
+      const {
+        error: deleteError,
+      } = await supabase
+        .from('class_members')
+        .delete()
+        .eq('class_id', id)
+        .eq('user_id', user.id)
+        .eq('role', 'teacher');
 
       if (deleteError) {
         Alert.alert(
@@ -665,6 +744,11 @@ export default function ClassSettingsScreen() {
       </View>
     );
   }
+
+  const nextSchoolYear =
+    getNextSchoolYear(
+      classData.school_year
+    );
 
   return (
     <ScrollView
@@ -1209,49 +1293,140 @@ export default function ClassSettingsScreen() {
         </View>
       )}
 
-      {/* NULSTIL PROTOKOLDATA */}
+      {/* NULSTIL PROTOKOLDATA / NYT SKOLEÅR */}
 
       {isOwner && (
         <View
           style={
-            styles.dangerZone
+            styles.newYearSection
           }
         >
           <View
             style={
-              styles.dangerTitleRow
+              styles.newYearHeader
             }
           >
             <View
               style={
-                styles.dangerIcon
+                styles.newYearIcon
               }
             >
               <Ionicons
                 name="refresh-outline"
-                size={20}
-                color="#991B1B"
+                size={21}
+                color={
+                  COLORS.navy
+                }
               />
             </View>
 
-            <Text
+            <View
               style={
-                styles.dangerTitle
+                styles.newYearHeaderText
               }
             >
-              Nulstil protokoldata
-            </Text>
+              <Text
+                style={
+                  styles.newYearTitle
+                }
+              >
+                Nulstil protokoldata
+              </Text>
+
+              <Text
+                style={
+                  styles.newYearText
+                }
+              >
+                Start et nyt skoleår med
+                de samme elever og lærere.
+                Klassens protokoldata
+                nulstilles.
+              </Text>
+            </View>
           </View>
 
-          <Text
+          {nextSchoolYear ? (
+            <View
+              style={
+                styles.nextYearBox
+              }
+            >
+              <View
+                style={
+                  styles.nextYearInfo
+                }
+              >
+                <Text
+                  style={
+                    styles.nextYearLabel
+                  }
+                >
+                  Nyt skoleår
+                </Text>
+
+                <Text
+                  style={
+                    styles.nextYearValue
+                  }
+                >
+                  {nextSchoolYear}
+                </Text>
+              </View>
+
+              <Ionicons
+                name="arrow-forward-outline"
+                size={19}
+                color={
+                  COLORS.navy
+                }
+              />
+            </View>
+          ) : (
+            <View
+              style={
+                styles.yearWarning
+              }
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={18}
+                color={
+                  COLORS.muted
+                }
+              />
+
+              <Text
+                style={
+                  styles.yearWarningText
+                }
+              >
+                Angiv først et skoleår
+                som fx 2026/2027.
+              </Text>
+            </View>
+          )}
+
+          <View
             style={
-              styles.dangerText
+              styles.newYearDetails
             }
           >
-            Alle protokoller, fremmøde og
-            fravær bliver slettet.
-            Elever og lærere bevares.
-          </Text>
+            <NewYearDetail
+              icon="people-outline"
+              text="Elever og lærere bevares"
+            />
+
+            <NewYearDetail
+              icon="refresh-outline"
+              text="Alle protokoller nulstilles"
+            />
+
+            <NewYearDetail
+              icon="stats-chart-outline"
+              text="Fremmøde og fravær starter fra nul"
+            />
+          </View>
 
           <Pressable
             onPress={
@@ -1259,27 +1434,32 @@ export default function ClassSettingsScreen() {
             }
             disabled={
               resettingProtocolData ||
-              saving
+              saving ||
+              !nextSchoolYear
             }
             style={({
               pressed,
             }) => [
-              styles.deleteClassButton,
+              styles.newYearButton,
 
               pressed &&
                 !resettingProtocolData &&
                 !saving &&
-                styles.pressed,
+                !!nextSchoolYear &&
+                styles.newYearButtonPressed,
 
               (resettingProtocolData ||
-                saving) &&
+                saving ||
+                !nextSchoolYear) &&
                 styles.disabled,
             ]}
           >
             {resettingProtocolData ? (
               <ActivityIndicator
                 size="small"
-                color="#FFFFFF"
+                color={
+                  COLORS.white
+                }
               />
             ) : (
               <View
@@ -1289,16 +1469,18 @@ export default function ClassSettingsScreen() {
               >
                 <Ionicons
                   name="refresh-outline"
-                  size={19}
-                  color="#FFFFFF"
+                  size={20}
+                  color={
+                    COLORS.white
+                  }
                 />
 
                 <Text
                   style={
-                    styles.deleteClassButtonText
+                    styles.newYearButtonText
                   }
                 >
-                  Nulstil protokoldata
+                  Start nyt skoleår
                 </Text>
               </View>
             )}
@@ -1397,6 +1579,86 @@ export default function ClassSettingsScreen() {
       )}
     </ScrollView>
   );
+}
+
+type NewYearDetailProps = {
+  icon:
+    keyof typeof Ionicons.glyphMap;
+
+  text: string;
+};
+
+function NewYearDetail({
+  icon,
+  text,
+}: NewYearDetailProps) {
+  return (
+    <View
+      style={
+        styles.newYearDetailRow
+      }
+    >
+      <View
+        style={
+          styles.newYearDetailIcon
+        }
+      >
+        <Ionicons
+          name={icon}
+          size={15}
+          color={
+            COLORS.navy
+          }
+        />
+      </View>
+
+      <Text
+        style={
+          styles.newYearDetailText
+        }
+      >
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+function getNextSchoolYear(
+  schoolYear: string | null
+) {
+  if (!schoolYear) {
+    return null;
+  }
+
+  const match =
+    schoolYear
+      .trim()
+      .match(
+        /^(\d{4})\s*\/\s*(\d{4})$/
+      );
+
+  if (!match) {
+    return null;
+  }
+
+  const startYear =
+    Number(match[1]);
+
+  const endYear =
+    Number(match[2]);
+
+  if (
+    Number.isNaN(startYear) ||
+    Number.isNaN(endYear) ||
+    endYear !==
+      startYear + 1
+  ) {
+    return null;
+  }
+
+  return `${startYear + 1}/${
+    endYear + 1
+  }`;
 }
 
 const styles =
@@ -1810,7 +2072,263 @@ const styles =
       marginBottom: 28,
     },
 
-    /* DESTRUKTIVE HANDLINGER */
+    /* NULSTIL / NYT SKOLEÅR */
+
+    newYearSection: {
+      backgroundColor:
+        COLORS.white,
+
+      borderRadius: 20,
+
+      padding: 20,
+
+      shadowColor:
+        '#000000',
+
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+
+      shadowOpacity: 0.04,
+
+      shadowRadius: 14,
+
+      elevation: 1,
+    },
+
+    newYearHeader: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'flex-start',
+    },
+
+    newYearIcon: {
+      width: 46,
+
+      height: 46,
+
+      borderRadius: 14,
+
+      backgroundColor:
+        COLORS.navySoft,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      marginRight: 13,
+    },
+
+    newYearHeaderText: {
+      flex: 1,
+    },
+
+    newYearTitle: {
+      fontSize: 20,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.text,
+    },
+
+    newYearText: {
+      fontSize: 14,
+
+      lineHeight: 20,
+
+      color:
+        COLORS.muted,
+
+      marginTop: 5,
+    },
+
+    nextYearBox: {
+      minHeight: 64,
+
+      borderRadius: 15,
+
+      backgroundColor:
+        COLORS.navySoft,
+
+      paddingHorizontal: 16,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
+      marginTop: 20,
+    },
+
+    nextYearInfo: {
+      gap: 2,
+    },
+
+    nextYearLabel: {
+      fontSize: 12,
+
+      fontWeight:
+        '600',
+
+      color:
+        COLORS.muted,
+    },
+
+    nextYearValue: {
+      fontSize: 18,
+
+      fontWeight:
+        '700',
+
+      color:
+        COLORS.navy,
+    },
+
+    yearWarning: {
+      minHeight: 52,
+
+      borderRadius: 14,
+
+      backgroundColor:
+        COLORS.soft,
+
+      paddingHorizontal: 14,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 8,
+
+      marginTop: 20,
+    },
+
+    yearWarningText: {
+      flex: 1,
+
+      color:
+        COLORS.muted,
+
+      fontSize: 13,
+
+      lineHeight: 18,
+    },
+
+    newYearDetails: {
+      gap: 10,
+
+      marginTop: 18,
+
+      marginBottom: 20,
+    },
+
+    newYearDetailRow: {
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 9,
+    },
+
+    newYearDetailIcon: {
+      width: 28,
+
+      height: 28,
+
+      borderRadius: 9,
+
+      backgroundColor:
+        COLORS.navySoft,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    newYearDetailText: {
+      flex: 1,
+
+      fontSize: 13,
+
+      color:
+        COLORS.muted,
+
+      lineHeight: 18,
+    },
+
+    newYearButton: {
+      minHeight: 54,
+
+      borderRadius: 15,
+
+      backgroundColor:
+        COLORS.navy,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+
+      paddingHorizontal: 16,
+
+      shadowColor:
+        COLORS.navyDark,
+
+      shadowOffset: {
+        width: 0,
+        height: 5,
+      },
+
+      shadowOpacity: 0.12,
+
+      shadowRadius: 10,
+
+      elevation: 2,
+    },
+
+    newYearButtonPressed: {
+      backgroundColor:
+        COLORS.navyDark,
+
+      transform: [
+        {
+          scale: 0.99,
+        },
+      ],
+    },
+
+    newYearButtonText: {
+      color:
+        COLORS.white,
+
+      fontSize: 15,
+
+      fontWeight:
+        '700',
+
+      textAlign:
+        'center',
+    },
+
+    /* SLET KLASSE / FORLAD KLASSE */
 
     dangerZone: {
       backgroundColor:
