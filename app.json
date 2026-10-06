@@ -32,7 +32,7 @@
       "icon": "./assets/images/icon.png",
 
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon-transparent.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FFFFFF"
       },
 

@@ -481,7 +481,7 @@ export default function ClassSettingsScreen() {
 
       /*
        * 2. SØRG FOR AT BRUGEREN
-       * ER EJER AF DEN NYE KLASSE
+       * ER administrator AF DEN NYE KLASSE
        */
 
       const {
@@ -990,7 +990,7 @@ export default function ClassSettingsScreen() {
       ) {
         Alert.alert(
           'Kunne ikke forlade klassen',
-          'Kun lærere, der ikke er ejer af klassen, kan forlade den.'
+          'Kun lærere, der ikke er administrator af klassen, kan forlade den.'
         );
 
         return;
@@ -1370,7 +1370,7 @@ export default function ClassSettingsScreen() {
                 styles.helper
               }
             >
-              Kun klassens ejer kan
+              Kun klassens administrator kan
               redigere klasseoplysninger.
             </Text>
           </View>
@@ -1478,50 +1478,26 @@ export default function ClassSettingsScreen() {
                 >
                   {teacher.role ===
                   'owner'
-                    ? 'Ejer'
+                    ? 'Administrator'
                     : 'Lærer'}
                 </Text>
               </View>
 
-              {teacher.role ===
-              'owner' ? (
-                <View
-                  style={
-                    styles.ownerBadge
-                  }
-                >
-                  <Text
-                    style={
-                      styles.ownerBadgeText
-                    }
-                  >
-                    Ejer
-                  </Text>
-                </View>
-              ) : (
-                isOwner && (
-                  <Pressable
-                    onPress={() =>
-                      removeTeacher(
-                        teacher.user_id,
-
-                        teacher.profiles
-                          ?.full_name ??
-                          'læreren'
-                      )
-                    }
-                    hitSlop={10}
-                  >
-                    <Text
-                      style={
-                        styles.removeTeacherText
-                      }
-                    >
-                      Fjern
-                    </Text>
-                  </Pressable>
-                )
-              )}
+              {teacher.role === 'teacher' && isOwner && (
+  <Pressable
+    onPress={() =>
+      removeTeacher(
+        teacher.user_id,
+        teacher.profiles?.full_name ?? 'læreren'
+      )
+    }
+    hitSlop={10}
+  >
+    <Text style={styles.removeTeacherText}>
+      Fjern
+    </Text>
+  </Pressable>
+)}
             </View>
           )
         )}
