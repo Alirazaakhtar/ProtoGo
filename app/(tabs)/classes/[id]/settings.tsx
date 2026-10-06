@@ -30,7 +30,6 @@ const COLORS = {
   muted: '#6B7280',
   lightMuted: '#9CA3AF',
 
-  soft: '#F5F6F8',
   white: '#FFFFFF',
 };
 
@@ -49,21 +48,6 @@ type ClassData = {
   school_year: string | null;
   subject: string | null;
   created_by: string;
-};
-
-type StudentCopyData = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  birth_date: string | null;
-  phone: string | null;
-  active: boolean;
-};
-
-type GuardianLink = {
-  student_id: string;
-  guardian_id: string;
-  relationship: string | null;
 };
 
 type ClassSettingsCache = {
@@ -133,8 +117,8 @@ export default function ClassSettingsScreen() {
     useState(false);
 
   const [
-    creatingNewYear,
-    setCreatingNewYear,
+    resettingProtocolData,
+    setResettingProtocolData,
   ] = useState(false);
 
   const [leavingClass, setLeavingClass] =
@@ -354,437 +338,67 @@ export default function ClassSettingsScreen() {
     }
   }
 
-  function handleCreateNextYear() {
+  function resetProtocolData() {
     if (
       !id ||
       !isOwner ||
-      !classData
+      resettingProtocolData
     ) {
       return;
     }
 
-    const nextSchoolYear =
-      getNextSchoolYear(
-        classData.school_year
-      );
-
-    if (!nextSchoolYear) {
-      Alert.alert(
-        'Skoleår mangler',
-        'Klassen skal have et gyldigt skoleår, fx 2026/2027, før den kan oprettes til det nye år.'
-      );
-
-      return;
-    }
-
     Alert.alert(
-      'Opret klasse til nyt skoleår',
-      `${classData.name} oprettes til ${nextSchoolYear}.\n\nAktive elever og deres forældrekontakter bliver kopieret.\n\nProtokoller og fraværshistorik bliver ikke kopieret.`,
+      'Nulstil protokoldata',
+      `Er du sikker på, at du vil nulstille alle protokoldata for ${
+        classData?.name ?? 'klassen'
+      }?\n\nAlle protokoller, fremmøde og fravær bliver permanent slettet. Elever og lærere bliver ikke slettet.\n\nDette kan ikke fortrydes.`,
       [
         {
           text: 'Annuller',
           style: 'cancel',
         },
         {
-          text: 'Opret klasse',
+          text: 'Nulstil',
+          style: 'destructive',
 
           onPress: () => {
-            void createClassForNextYear(
-              nextSchoolYear
-            );
+            void confirmResetProtocolData();
           },
         },
       ]
     );
   }
 
-  async function createClassForNextYear(
-    nextSchoolYear: string
-  ) {
-    if (
-      !id ||
-      !isOwner ||
-      !classData
-    ) {
+  async function confirmResetProtocolData() {
+    if (!id || !isOwner) {
       return;
     }
 
-    let newClassId: string | null =
-      null;
-
     try {
-      setCreatingNewYear(true);
+      setResettingProtocolData(true);
 
-      const {
-        data: { user },
-        error: userError,
-      } =
-        await supabase.auth.getUser();
+      const { error } = await supabase.rpc(
+        'reset_class_protocol_data',
+        {
+          p_class_id: id,
+        }
+      );
 
-      if (
-        userError ||
-        !user
-      ) {
+      if (error) {
         Alert.alert(
-          'Fejl',
-          'Du er ikke logget ind.'
+          'Kunne ikke nulstille protokoldata',
+          error.message
         );
 
         return;
       }
 
-      /*
-       * 1. OPRET NY KLASSE
-       */
-
-      const {
-        data: newClass,
-        error: createClassError,
-      } = await supabase
-        .from('classes')
-        .insert({
-          name:
-            classData.name,
-
-          school_year:
-            nextSchoolYear,
-
-          subject:
-            classData.subject,
-
-          created_by:
-            user.id,
-        })
-        .select(`
-          id,
-          name,
-          school_year,
-          subject,
-          created_by
-        `)
-        .single();
-
-      if (
-        createClassError ||
-        !newClass
-      ) {
-        throw (
-          createClassError ??
-          new Error(
-            'Den nye klasse kunne ikke oprettes.'
-          )
-        );
-      }
-
-      newClassId =
-        newClass.id;
-
-      /*
-       * 2. SØRG FOR AT BRUGEREN
-       * ER administrator AF DEN NYE KLASSE
-       */
-
-      const {
-        data: existingOwner,
-        error: ownerCheckError,
-      } = await supabase
-        .from('class_members')
-        .select('user_id')
-        .eq(
-          'class_id',
-          newClassId
-        )
-        .eq(
-          'user_id',
-          user.id
-        )
-        .maybeSingle();
-
-      if (ownerCheckError) {
-        throw ownerCheckError;
-      }
-
-      if (!existingOwner) {
-        const {
-          error: ownerInsertError,
-        } = await supabase
-          .from('class_members')
-          .insert({
-            class_id:
-              newClassId,
-
-            user_id:
-              user.id,
-
-            role:
-              'owner',
-          });
-
-        if (ownerInsertError) {
-          throw ownerInsertError;
-        }
-      }
-
-      /*
-       * 3. HENT AKTIVE ELEVER
-       */
-
-      const {
-        data: students,
-        error: studentsError,
-      } = await supabase
-        .from('students')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          birth_date,
-          phone,
-          active
-        `)
-        .eq(
-          'class_id',
-          id
-        )
-        .eq(
-          'active',
-          true
-        );
-
-      if (studentsError) {
-        throw studentsError;
-      }
-
-      const activeStudents =
-        (students ??
-          []) as StudentCopyData[];
-
-      /*
-       * 4. HENT FORÆLDRERELATIONER
-       */
-
-      let guardianLinks:
-        GuardianLink[] = [];
-
-      const oldStudentIds =
-        activeStudents.map(
-          (student) =>
-            student.id
-        );
-
-      if (
-        oldStudentIds.length >
-        0
-      ) {
-        const {
-          data: links,
-          error: linksError,
-        } = await supabase
-          .from(
-            'student_guardians'
-          )
-          .select(`
-            student_id,
-            guardian_id,
-            relationship
-          `)
-          .in(
-            'student_id',
-            oldStudentIds
-          );
-
-        if (linksError) {
-          throw linksError;
-        }
-
-        guardianLinks =
-          (links ??
-            []) as GuardianLink[];
-      }
-
-      /*
-       * 5. KOPIÉR ELEVER
-       */
-
-      const studentIdMap =
-        new Map<
-          string,
-          string
-        >();
-
-      for (
-        const student of
-          activeStudents
-      ) {
-        const {
-          data: newStudent,
-          error:
-            studentInsertError,
-        } = await supabase
-          .from('students')
-          .insert({
-            class_id:
-              newClassId,
-
-            first_name:
-              student.first_name,
-
-            last_name:
-              student.last_name,
-
-            birth_date:
-              student.birth_date,
-
-            phone:
-              student.phone,
-
-            active:
-              true,
-
-            created_by:
-              user.id,
-          })
-          .select('id')
-          .single();
-
-        if (
-          studentInsertError ||
-          !newStudent
-        ) {
-          throw (
-            studentInsertError ??
-            new Error(
-              'En elev kunne ikke kopieres.'
-            )
-          );
-        }
-
-        studentIdMap.set(
-          student.id,
-          newStudent.id
-        );
-      }
-
-      /*
-       * 6. KOPIÉR FORÆLDRERELATIONER
-       *
-       * Eksisterende guardians
-       * genbruges.
-       */
-
-      const newGuardianLinks =
-        guardianLinks.flatMap(
-          (link) => {
-            const newStudentId =
-              studentIdMap.get(
-                link.student_id
-              );
-
-            if (!newStudentId) {
-              return [];
-            }
-
-            return [
-              {
-                student_id:
-                  newStudentId,
-
-                guardian_id:
-                  link.guardian_id,
-
-                relationship:
-                  link.relationship,
-              },
-            ];
-          }
-        );
-
-      if (
-        newGuardianLinks.length >
-        0
-      ) {
-        const {
-          error:
-            guardianInsertError,
-        } = await supabase
-          .from(
-            'student_guardians'
-          )
-          .insert(
-            newGuardianLinks
-          );
-
-        if (
-          guardianInsertError
-        ) {
-          throw guardianInsertError;
-        }
-      }
-
-      /*
-       * 7. FÆRDIG
-       */
-
       Alert.alert(
-        'Klasse oprettet',
-        `${classData.name} er oprettet til ${nextSchoolYear} med ${activeStudents.length} ${
-          activeStudents.length ===
-          1
-            ? 'elev'
-            : 'elever'
-        }.`,
-        [
-          {
-            text:
-              'Åbn klasse',
-
-            onPress: () => {
-              router.replace({
-                pathname:
-                  '/(tabs)/classes/[id]',
-
-                params: {
-                  id:
-                    newClassId!,
-                },
-              });
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      console.error(
-        'Kunne ikke oprette klasse til nyt skoleår:',
-        error
-      );
-
-      if (newClassId) {
-        const {
-          error: cleanupError,
-        } = await supabase
-          .from('classes')
-          .delete()
-          .eq(
-            'id',
-            newClassId
-          );
-
-        if (cleanupError) {
-          console.error(
-            'Kunne ikke rydde den halvfærdige klasse op:',
-            cleanupError
-          );
-        }
-      }
-
-      Alert.alert(
-        'Kunne ikke oprette klassen',
-        error instanceof Error
-          ? error.message
-          : 'Der opstod en fejl under kopieringen.'
+        'Protokoldata nulstillet',
+        'Alle protokoller og fremmødedata er slettet. Elever og lærere er bevaret.'
       );
     } finally {
-      setCreatingNewYear(false);
+      setResettingProtocolData(false);
     }
   }
 
@@ -1052,11 +666,6 @@ export default function ClassSettingsScreen() {
     );
   }
 
-  const nextSchoolYear =
-    getNextSchoolYear(
-      classData.school_year
-    );
-
   return (
     <ScrollView
       style={
@@ -1305,7 +914,7 @@ export default function ClassSettingsScreen() {
             }
             disabled={
               saving ||
-              creatingNewYear
+              resettingProtocolData
             }
             style={({
               pressed,
@@ -1316,7 +925,7 @@ export default function ClassSettingsScreen() {
                 styles.saveButtonPressed,
 
               (saving ||
-                creatingNewYear) &&
+                resettingProtocolData) &&
                 styles.disabled,
             ]}
           >
@@ -1483,21 +1092,30 @@ export default function ClassSettingsScreen() {
                 </Text>
               </View>
 
-              {teacher.role === 'teacher' && isOwner && (
-  <Pressable
-    onPress={() =>
-      removeTeacher(
-        teacher.user_id,
-        teacher.profiles?.full_name ?? 'læreren'
-      )
-    }
-    hitSlop={10}
-  >
-    <Text style={styles.removeTeacherText}>
-      Fjern
-    </Text>
-  </Pressable>
-)}
+              {teacher.role ===
+                'teacher' &&
+                isOwner && (
+                  <Pressable
+                    onPress={() =>
+                      removeTeacher(
+                        teacher.user_id,
+
+                        teacher.profiles
+                          ?.full_name ??
+                          'læreren'
+                      )
+                    }
+                    hitSlop={10}
+                  >
+                    <Text
+                      style={
+                        styles.removeTeacherText
+                      }
+                    >
+                      Fjern
+                    </Text>
+                  </Pressable>
+                )}
             </View>
           )
         )}
@@ -1524,7 +1142,6 @@ export default function ClassSettingsScreen() {
               styles.dangerTitleRow
             }
           >
-
             <Text
               style={
                 styles.dangerTitle
@@ -1592,170 +1209,77 @@ export default function ClassSettingsScreen() {
         </View>
       )}
 
-      {/* NYT SKOLEÅR */}
+      {/* NULSTIL PROTOKOLDATA */}
 
       {isOwner && (
         <View
           style={
-            styles.newYearSection
+            styles.dangerZone
           }
         >
           <View
             style={
-              styles.newYearHeader
+              styles.dangerTitleRow
             }
           >
             <View
               style={
-                styles.newYearIcon
+                styles.dangerIcon
               }
             >
               <Ionicons
-                name="copy-outline"
-                size={21}
-                color={
-                  COLORS.navy
-                }
+                name="refresh-outline"
+                size={20}
+                color="#991B1B"
               />
             </View>
 
-            <View
+            <Text
               style={
-                styles.newYearHeaderText
+                styles.dangerTitle
               }
             >
-              <Text
-                style={
-                  styles.newYearTitle
-                }
-              >
-                Nyt skoleår
-              </Text>
-
-              <Text
-                style={
-                  styles.newYearText
-                }
-              >
-                Opret en ny version af
-                klassen med de samme
-                aktive elever og deres
-                forældrekontakter.
-              </Text>
-            </View>
+              Nulstil protokoldata
+            </Text>
           </View>
 
-          {nextSchoolYear ? (
-            <View
-              style={
-                styles.nextYearBox
-              }
-            >
-              <View
-                style={
-                  styles.nextYearInfo
-                }
-              >
-                <Text
-                  style={
-                    styles.nextYearLabel
-                  }
-                >
-                  Nyt skoleår
-                </Text>
-
-                <Text
-                  style={
-                    styles.nextYearValue
-                  }
-                >
-                  {nextSchoolYear}
-                </Text>
-              </View>
-
-              <Ionicons
-                name="arrow-forward-outline"
-                size={19}
-                color={
-                  COLORS.navy
-                }
-              />
-            </View>
-          ) : (
-            <View
-              style={
-                styles.yearWarning
-              }
-            >
-              <Ionicons
-                name="information-circle-outline"
-                size={18}
-                color={
-                  COLORS.muted
-                }
-              />
-
-              <Text
-                style={
-                  styles.yearWarningText
-                }
-              >
-                Angiv først et skoleår
-                som fx 2026/2027.
-              </Text>
-            </View>
-          )}
-
-          <View
+          <Text
             style={
-              styles.newYearDetails
+              styles.dangerText
             }
           >
-            <NewYearDetail
-              icon="people-outline"
-              text="Aktive elever kopieres"
-            />
-
-            <NewYearDetail
-              icon="heart-outline"
-              text="Forældre og relationer følger med"
-            />
-
-            <NewYearDetail
-              icon="time-outline"
-              text="Protokoller og historik starter fra nul"
-            />
-          </View>
+            Alle protokoller, fremmøde og
+            fravær bliver slettet.
+            Elever og lærere bevares.
+          </Text>
 
           <Pressable
             onPress={
-              handleCreateNextYear
+              resetProtocolData
             }
             disabled={
-              creatingNewYear ||
+              resettingProtocolData ||
               saving
             }
             style={({
               pressed,
             }) => [
-              styles.newYearButton,
+              styles.deleteClassButton,
 
               pressed &&
-                !creatingNewYear &&
+                !resettingProtocolData &&
                 !saving &&
-                styles.newYearButtonPressed,
+                styles.pressed,
 
-              (creatingNewYear ||
+              (resettingProtocolData ||
                 saving) &&
                 styles.disabled,
             ]}
           >
-            {creatingNewYear ? (
+            {resettingProtocolData ? (
               <ActivityIndicator
                 size="small"
-                color={
-                  COLORS.white
-                }
+                color="#FFFFFF"
               />
             ) : (
               <View
@@ -1764,20 +1288,17 @@ export default function ClassSettingsScreen() {
                 }
               >
                 <Ionicons
-                  name="add-circle-outline"
-                  size={20}
-                  color={
-                    COLORS.white
-                  }
+                  name="refresh-outline"
+                  size={19}
+                  color="#FFFFFF"
                 />
 
                 <Text
                   style={
-                    styles.newYearButtonText
+                    styles.deleteClassButtonText
                   }
                 >
-                  Opret klassen til det
-                  nye år
+                  Nulstil protokoldata
                 </Text>
               </View>
             )}
@@ -1785,7 +1306,7 @@ export default function ClassSettingsScreen() {
         </View>
       )}
 
-      {/* STREG MELLEM NYT SKOLEÅR OG SLET */}
+      {/* STREG MELLEM NULSTIL OG SLET */}
 
       {isOwner && (
         <View
@@ -1876,86 +1397,6 @@ export default function ClassSettingsScreen() {
       )}
     </ScrollView>
   );
-}
-
-type NewYearDetailProps = {
-  icon:
-    keyof typeof Ionicons.glyphMap;
-
-  text: string;
-};
-
-function NewYearDetail({
-  icon,
-  text,
-}: NewYearDetailProps) {
-  return (
-    <View
-      style={
-        styles.newYearDetailRow
-      }
-    >
-      <View
-        style={
-          styles.newYearDetailIcon
-        }
-      >
-        <Ionicons
-          name={icon}
-          size={15}
-          color={
-            COLORS.navy
-          }
-        />
-      </View>
-
-      <Text
-        style={
-          styles.newYearDetailText
-        }
-      >
-        {text}
-      </Text>
-    </View>
-  );
-}
-
-function getNextSchoolYear(
-  schoolYear: string | null
-) {
-  if (!schoolYear) {
-    return null;
-  }
-
-  const match =
-    schoolYear
-      .trim()
-      .match(
-        /^(\d{4})\s*\/\s*(\d{4})$/
-      );
-
-  if (!match) {
-    return null;
-  }
-
-  const startYear =
-    Number(match[1]);
-
-  const endYear =
-    Number(match[2]);
-
-  if (
-    Number.isNaN(startYear) ||
-    Number.isNaN(endYear) ||
-    endYear !==
-      startYear + 1
-  ) {
-    return null;
-  }
-
-  return `${startYear + 1}/${
-    endYear + 1
-  }`;
 }
 
 const styles =
@@ -2346,27 +1787,6 @@ const styles =
       marginTop: 2,
     },
 
-    ownerBadge: {
-      backgroundColor:
-        COLORS.navySoft,
-
-      paddingHorizontal: 10,
-
-      paddingVertical: 5,
-
-      borderRadius: 20,
-    },
-
-    ownerBadgeText: {
-      color:
-        COLORS.navy,
-
-      fontSize: 12,
-
-      fontWeight:
-        '700',
-    },
-
     removeTeacherText: {
       fontSize: 14,
 
@@ -2390,263 +1810,7 @@ const styles =
       marginBottom: 28,
     },
 
-    /* NYT SKOLEÅR */
-
-    newYearSection: {
-      backgroundColor:
-        COLORS.white,
-
-      borderRadius: 20,
-
-      padding: 20,
-
-      shadowColor:
-        '#000000',
-
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-
-      shadowOpacity: 0.04,
-
-      shadowRadius: 14,
-
-      elevation: 1,
-    },
-
-    newYearHeader: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'flex-start',
-    },
-
-    newYearIcon: {
-      width: 46,
-
-      height: 46,
-
-      borderRadius: 14,
-
-      backgroundColor:
-        COLORS.navySoft,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      marginRight: 13,
-    },
-
-    newYearHeaderText: {
-      flex: 1,
-    },
-
-    newYearTitle: {
-      fontSize: 20,
-
-      fontWeight:
-        '700',
-
-      color:
-        COLORS.text,
-    },
-
-    newYearText: {
-      fontSize: 14,
-
-      lineHeight: 20,
-
-      color:
-        COLORS.muted,
-
-      marginTop: 5,
-    },
-
-    nextYearBox: {
-      minHeight: 64,
-
-      borderRadius: 15,
-
-      backgroundColor:
-        COLORS.navySoft,
-
-      paddingHorizontal: 16,
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'space-between',
-
-      marginTop: 20,
-    },
-
-    nextYearInfo: {
-      gap: 2,
-    },
-
-    nextYearLabel: {
-      fontSize: 12,
-
-      fontWeight:
-        '600',
-
-      color:
-        COLORS.muted,
-    },
-
-    nextYearValue: {
-      fontSize: 18,
-
-      fontWeight:
-        '700',
-
-      color:
-        COLORS.navy,
-    },
-
-    yearWarning: {
-      minHeight: 52,
-
-      borderRadius: 14,
-
-      backgroundColor:
-        COLORS.soft,
-
-      paddingHorizontal: 14,
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      gap: 8,
-
-      marginTop: 20,
-    },
-
-    yearWarningText: {
-      flex: 1,
-
-      color:
-        COLORS.muted,
-
-      fontSize: 13,
-
-      lineHeight: 18,
-    },
-
-    newYearDetails: {
-      gap: 10,
-
-      marginTop: 18,
-
-      marginBottom: 20,
-    },
-
-    newYearDetailRow: {
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      gap: 9,
-    },
-
-    newYearDetailIcon: {
-      width: 28,
-
-      height: 28,
-
-      borderRadius: 9,
-
-      backgroundColor:
-        COLORS.navySoft,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-    },
-
-    newYearDetailText: {
-      flex: 1,
-
-      fontSize: 13,
-
-      color:
-        COLORS.muted,
-
-      lineHeight: 18,
-    },
-
-    newYearButton: {
-      minHeight: 54,
-
-      borderRadius: 15,
-
-      backgroundColor:
-        COLORS.navy,
-
-      alignItems:
-        'center',
-
-      justifyContent:
-        'center',
-
-      paddingHorizontal: 16,
-
-      shadowColor:
-        COLORS.navyDark,
-
-      shadowOffset: {
-        width: 0,
-        height: 5,
-      },
-
-      shadowOpacity: 0.12,
-
-      shadowRadius: 10,
-
-      elevation: 2,
-    },
-
-    newYearButtonPressed: {
-      backgroundColor:
-        COLORS.navyDark,
-
-      transform: [
-        {
-          scale: 0.99,
-        },
-      ],
-    },
-
-    newYearButtonText: {
-      color:
-        COLORS.white,
-
-      fontSize: 15,
-
-      fontWeight:
-        '700',
-
-      textAlign:
-        'center',
-    },
-
-    /* SLET KLASSE / FORLAD KLASSE */
+    /* DESTRUKTIVE HANDLINGER */
 
     dangerZone: {
       backgroundColor:
