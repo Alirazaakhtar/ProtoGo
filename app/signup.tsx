@@ -139,6 +139,9 @@ export default function SignupScreen() {
 
               full_name:
                 fullName,
+
+              onboarding_completed:
+                false,
             },
           },
         });

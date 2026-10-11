@@ -19,6 +19,7 @@ import {
 } from '@supabase/supabase-js';
 
 import * as Application from 'expo-application';
+import { Asset } from 'expo-asset';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { supabase } from '@/lib/supabase';
@@ -122,208 +123,248 @@ export default function RootLayout() {
   const optionalUpdateShown =
     useRef(false);
 
-const openStore = useCallback(
-  async (
-    storeUrl: string | null
-  ) => {
-    if (!storeUrl) {
-      Alert.alert(
-        'Opdatering',
-        'Linket til den nye version er endnu ikke tilgængeligt.'
-      );
+  /*
+   * Kun brugere hvor værdien
+   * specifikt er false skal se
+   * onboarding.
+   *
+   * Det betyder, at eksisterende
+   * brugere uden feltet ikke bliver
+   * sendt gennem onboarding.
+   */
+  const needsOnboarding =
+    session?.user.user_metadata
+      ?.onboarding_completed === false;
 
-      return;
-    }
+  const openStore = useCallback(
+    async (
+      storeUrl: string | null
+    ) => {
+      if (!storeUrl) {
+        Alert.alert(
+          'Opdatering',
+          'Linket til den nye version er endnu ikke tilgængeligt.'
+        );
 
-    try {
-      await Linking.openURL(
-        storeUrl
-      );
-    } catch (error) {
-      console.error(
-        'Kunne ikke åbne app-butikken:',
-        error
-      );
-
-      Alert.alert(
-        'Kunne ikke åbne butikken',
-        'App-butikken kunne ikke åbnes. Prøv igen senere.'
-      );
-    }
-  },
-  []
-);
-
-  const checkForUpdate = useCallback(
-  async () => {
-    if (
-      updateCheckRunning.current
-    ) {
-      return;
-    }
-
-    if (
-      Platform.OS !== 'ios' &&
-      Platform.OS !== 'android'
-    ) {
-      return;
-    }
-
-    updateCheckRunning.current =
-      true;
-
-    try {
-      const currentVersion =
-        Application
-          .nativeApplicationVersion;
-
-      if (!currentVersion) {
         return;
       }
 
-      const {
-        data,
-        error,
-      } =
-        await supabase
-          .from('app_versions')
-          .select(`
-            ios_latest,
-            ios_minimum,
-            android_latest,
-            android_minimum,
-            ios_url,
-            android_url
-          `)
-          .eq('id', 1)
-          .single();
-
-      if (error) {
+      try {
+        await Linking.openURL(
+          storeUrl
+        );
+      } catch (error) {
         console.error(
-          'Kunne ikke hente app-version:',
+          'Kunne ikke åbne app-butikken:',
           error
         );
 
-        return;
-      }
-
-      if (!data) {
-        return;
-      }
-
-      const versionData =
-        data as AppVersion;
-
-      const isIOS =
-        Platform.OS === 'ios';
-
-      const latestVersion =
-        isIOS
-          ? versionData.ios_latest
-          : versionData.android_latest;
-
-      const minimumVersion =
-        isIOS
-          ? versionData.ios_minimum
-          : versionData.android_minimum;
-
-      const storeUrl =
-        isIOS
-          ? versionData.ios_url
-          : versionData.android_url;
-
-      const belowMinimum =
-        compareVersions(
-          currentVersion,
-          minimumVersion
-        ) < 0;
-
-      const newerVersionAvailable =
-        compareVersions(
-          currentVersion,
-          latestVersion
-        ) < 0;
-
-      /*
-       * TVUNGEN OPDATERING
-       */
-
-      if (belowMinimum) {
         Alert.alert(
-          'Opdatering påkrævet',
-          `Din version af ProtoGo (${currentVersion}) er ikke længere understøttet.\n\nOpdater til version ${latestVersion} for at fortsætte.`,
-          [
-            {
-              text:
-                'Opdater ProtoGo',
-
-              onPress: () => {
-                void openStore(
-                  storeUrl
-                );
-              },
-            },
-          ],
-          {
-            cancelable: false,
-          }
+          'Kunne ikke åbne butikken',
+          'App-butikken kunne ikke åbnes. Prøv igen senere.'
         );
+      }
+    },
+    []
+  );
 
+  const checkForUpdate = useCallback(
+    async () => {
+      if (
+        updateCheckRunning.current
+      ) {
         return;
       }
-
-      /*
-       * VALGFRI OPDATERING
-       */
 
       if (
-        newerVersionAvailable &&
-        !optionalUpdateShown.current
+        Platform.OS !== 'ios' &&
+        Platform.OS !== 'android'
       ) {
-        optionalUpdateShown.current =
-          true;
-
-        Alert.alert(
-          'Ny version af ProtoGo',
-          `Version ${latestVersion} er nu tilgængelig.\n\nOpdater ProtoGo for at få de seneste forbedringer og rettelser.`,
-          [
-            {
-              text: 'Senere',
-              style: 'cancel',
-            },
-            {
-              text: 'Opdater',
-
-              onPress: () => {
-                void openStore(
-                  storeUrl
-                );
-              },
-            },
-          ]
-        );
+        return;
       }
-    } catch (error) {
-      console.error(
-        'Fejl ved versionskontrol:',
-        error
-      );
-    } finally {
+
       updateCheckRunning.current =
-        false;
-    }
+        true;
+
+      try {
+        const currentVersion =
+          Application
+            .nativeApplicationVersion;
+
+        if (!currentVersion) {
+          return;
+        }
+
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from('app_versions')
+            .select(`
+              ios_latest,
+              ios_minimum,
+              android_latest,
+              android_minimum,
+              ios_url,
+              android_url
+            `)
+            .eq('id', 1)
+            .single();
+
+        if (error) {
+          console.error(
+            'Kunne ikke hente app-version:',
+            error
+          );
+
+          return;
+        }
+
+        if (!data) {
+          return;
+        }
+
+        const versionData =
+          data as AppVersion;
+
+        const isIOS =
+          Platform.OS === 'ios';
+
+        const latestVersion =
+          isIOS
+            ? versionData.ios_latest
+            : versionData.android_latest;
+
+        const minimumVersion =
+          isIOS
+            ? versionData.ios_minimum
+            : versionData.android_minimum;
+
+        const storeUrl =
+          isIOS
+            ? versionData.ios_url
+            : versionData.android_url;
+
+        const belowMinimum =
+          compareVersions(
+            currentVersion,
+            minimumVersion
+          ) < 0;
+
+        const newerVersionAvailable =
+          compareVersions(
+            currentVersion,
+            latestVersion
+          ) < 0;
+
+        /*
+         * TVUNGEN OPDATERING
+         */
+
+        if (belowMinimum) {
+          Alert.alert(
+            'Opdatering påkrævet',
+            `Din version af ProtoGo (${currentVersion}) er ikke længere understøttet.\n\nOpdater til version ${latestVersion} for at fortsætte.`,
+            [
+              {
+                text:
+                  'Opdater ProtoGo',
+
+                onPress: () => {
+                  void openStore(
+                    storeUrl
+                  );
+                },
+              },
+            ],
+            {
+              cancelable: false,
+            }
+          );
+
+          return;
+        }
+
+        /*
+         * VALGFRI OPDATERING
+         */
+
+        if (
+          newerVersionAvailable &&
+          !optionalUpdateShown.current
+        ) {
+          optionalUpdateShown.current =
+            true;
+
+          Alert.alert(
+            'Ny version af ProtoGo',
+            `Version ${latestVersion} er nu tilgængelig.\n\nOpdater ProtoGo for at få de seneste forbedringer og rettelser.`,
+            [
+              {
+                text: 'Senere',
+                style: 'cancel',
+              },
+              {
+                text: 'Opdater',
+
+                onPress: () => {
+                  void openStore(
+                    storeUrl
+                  );
+                },
+              },
+            ]
+          );
+        }
+      } catch (error) {
+        console.error(
+          'Fejl ved versionskontrol:',
+          error
+        );
+      } finally {
+        updateCheckRunning.current =
+          false;
+      }
     },
-  [openStore]
-);
+    [openStore]
+  );
 
   useEffect(() => {
     let mounted = true;
 
     async function initializeApp() {
       try {
-        const [sessionResult] =
+        /*
+         * PRELOAD PROTOGO-LOGO
+         *
+         * Logoet bliver lagt i cache allerede
+         * under splash-screenen.
+         *
+         * Derfor er det klar, når login,
+         * signup eller onboarding vises.
+         */
+        const preloadLogo =
+          Asset.loadAsync(
+            require('../assets/images/logo.png')
+          ).catch((error) => {
+            /*
+             * Logo-fejl må ikke forhindre
+             * resten af appen i at starte.
+             */
+            console.error(
+              'Kunne ikke preloade ProtoGo-logo:',
+              error
+            );
+          });
+
+        const [
+          sessionResult,
+        ] =
           await Promise.all([
             supabase.auth.getSession(),
+
+            preloadLogo,
 
             // Vis splash i minimum 1,5 sekund
             new Promise<void>(
@@ -380,16 +421,16 @@ const openStore = useCallback(
     };
   }, []);
 
-useEffect(() => {
-  if (!loading) {
-    SplashScreen.hide();
+  useEffect(() => {
+    if (!loading) {
+      SplashScreen.hide();
 
-    void checkForUpdate();
-  }
-}, [
-  loading,
-  checkForUpdate,
-]);
+      void checkForUpdate();
+    }
+  }, [
+    loading,
+    checkForUpdate,
+  ]);
 
   /*
    * TJEK IGEN NÅR APPEN BLIVER AKTIV
@@ -398,6 +439,7 @@ useEffect(() => {
    * går til App Store / Play Store
    * og derefter vender tilbage.
    */
+
   useEffect(() => {
     const subscription =
       AppState.addEventListener(
@@ -415,12 +457,10 @@ useEffect(() => {
     return () => {
       subscription.remove();
     };
-}, [
-  loading,
-  checkForUpdate,
-]);
-
-
+  }, [
+    loading,
+    checkForUpdate,
+  ]);
 
   if (loading) {
     return null;
@@ -450,10 +490,26 @@ useEffect(() => {
         />
       </Stack.Protected>
 
-      {/* LOGGET IND */}
+      {/* NY BRUGER - ONBOARDING */}
 
       <Stack.Protected
-        guard={!!session}
+        guard={
+          !!session &&
+          needsOnboarding
+        }
+      >
+        <Stack.Screen
+          name="onboarding"
+        />
+      </Stack.Protected>
+
+      {/* LOGGET IND OG ONBOARDING FÆRDIG */}
+
+      <Stack.Protected
+        guard={
+          !!session &&
+          !needsOnboarding
+        }
       >
         <Stack.Screen
           name="(tabs)"
