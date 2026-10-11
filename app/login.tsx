@@ -1,5 +1,7 @@
 import { useState } from 'react';
+
 import { router } from 'expo-router';
+
 import { Ionicons } from '@expo/vector-icons';
 
 import {
@@ -36,6 +38,9 @@ export default function LoginScreen() {
 
   const [password, setPassword] =
     useState('');
+
+  const [showPassword, setShowPassword] =
+    useState(false);
 
   const [loading, setLoading] =
     useState(false);
@@ -168,42 +173,86 @@ export default function LoginScreen() {
               </Text>
             </View>
 
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Din adgangskode"
-              placeholderTextColor={
-                COLORS.lightMuted
-              }
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="done"
-              style={styles.input}
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Din adgangskode"
+                placeholderTextColor={
+                  COLORS.lightMuted
+                }
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                style={styles.passwordInput}
+              />
 
-<Pressable
-  onPress={() =>
-    router.push(
-      '/forgot-password'
-    )
-  }
-  hitSlop={8}
-  style={({ pressed }) => [
-    styles.forgotPasswordButton,
-    pressed && {
-      opacity: 0.6,
-    },
-  ]}
->
-  <Text
-    style={
-      styles.forgotPasswordText
-    }
-  >
-    Glemt adgangskode?
-  </Text>
-</Pressable>
+              <Pressable
+                onPress={() =>
+                  setShowPassword(
+                    (current) => !current
+                  )
+                }
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showPassword
+                    ? 'Skjul adgangskode'
+                    : 'Vis adgangskode'
+                }
+                accessibilityState={{
+                  selected: showPassword,
+                }}
+                style={({ pressed }) => [
+                  styles.passwordToggle,
+
+                  showPassword &&
+                    styles.passwordToggleVisible,
+
+                  pressed &&
+                    styles.passwordTogglePressed,
+                ]}
+              >
+                <Ionicons
+                  name={
+                    showPassword
+                      ? 'eye-outline'
+                      : 'eye-off-outline'
+                  }
+                  size={21}
+                  color={
+                    showPassword
+                      ? COLORS.navy
+                      : COLORS.lightMuted
+                  }
+                />
+              </Pressable>
+            </View>
+
+            <Pressable
+              onPress={() =>
+                router.push(
+                  '/forgot-password'
+                )
+              }
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.forgotPasswordButton,
+
+                pressed && {
+                  opacity: 0.6,
+                },
+              ]}
+            >
+              <Text
+                style={
+                  styles.forgotPasswordText
+                }
+              >
+                Glemt adgangskode?
+              </Text>
+            </Pressable>
           </View>
 
           {/* LOGIN */}
@@ -377,23 +426,57 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
 
-  /* FORGOT */
+  /* PASSWORD */
 
-  forgotButton: {
-    alignSelf: 'flex-start',
+  passwordContainer: {
+    height: 56,
 
-    paddingVertical: 4,
-    paddingHorizontal: 2,
+    borderRadius: 16,
 
-    marginTop: -2,
+    backgroundColor:
+      COLORS.white,
+
+    borderWidth: 1,
+
+    borderColor: '#E5E7EB',
+
+    paddingLeft: 18,
+    paddingRight: 8,
+
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
-  forgotText: {
-    fontSize: 13,
+  passwordInput: {
+    flex: 1,
 
-    fontWeight: '600',
+    height: '100%',
 
-    color: COLORS.navy,
+    fontSize: 16,
+
+    color: COLORS.text,
+
+    paddingVertical: 0,
+    paddingRight: 10,
+  },
+
+  passwordToggle: {
+    width: 40,
+    height: 40,
+
+    borderRadius: 12,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  passwordToggleVisible: {
+    backgroundColor:
+      COLORS.navySoft,
+  },
+
+  passwordTogglePressed: {
+    opacity: 0.6,
   },
 
   /* LOGIN */
@@ -479,14 +562,22 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 
-  forgotPasswordButton: {
-  alignSelf: 'flex-end',
-  marginTop: 10,
-},
+  /* FORGOT PASSWORD */
 
-forgotPasswordText: {
-  fontSize: 14,
-  fontWeight: '600',
-  color: COLORS.navy,
-},
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+
+    marginTop: 2,
+
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+
+  forgotPasswordText: {
+    fontSize: 14,
+
+    fontWeight: '600',
+
+    color: COLORS.navy,
+  },
 });

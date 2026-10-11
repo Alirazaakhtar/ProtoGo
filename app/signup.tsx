@@ -1,5 +1,7 @@
 import { useState } from 'react';
+
 import { router } from 'expo-router';
+
 import { Ionicons } from '@expo/vector-icons';
 
 import {
@@ -47,6 +49,21 @@ export default function SignupScreen() {
   const [password, setPassword] =
     useState('');
 
+  const [
+    confirmPassword,
+    setConfirmPassword,
+  ] = useState('');
+
+  const [
+    showPassword,
+    setShowPassword,
+  ] = useState(false);
+
+  const [
+    showConfirmPassword,
+    setShowConfirmPassword,
+  ] = useState(false);
+
   const [loading, setLoading] =
     useState(false);
 
@@ -66,7 +83,8 @@ export default function SignupScreen() {
       !cleanedFirstName ||
       !cleanedLastName ||
       !cleanedEmail ||
-      !password
+      !password ||
+      !confirmPassword
     ) {
       Alert.alert(
         'Manglende oplysninger',
@@ -80,6 +98,18 @@ export default function SignupScreen() {
       Alert.alert(
         'Adgangskoden er for kort',
         'Adgangskoden skal være mindst 8 tegn.'
+      );
+
+      return;
+    }
+
+    if (
+      password !==
+      confirmPassword
+    ) {
+      Alert.alert(
+        'Adgangskoderne er ikke ens',
+        'De to adgangskoder skal være identiske.'
       );
 
       return;
@@ -128,6 +158,7 @@ export default function SignupScreen() {
        * signUp returnere en session
        * med det samme.
        */
+
       if (data.session) {
         await supabase.auth.signOut();
 
@@ -154,6 +185,7 @@ export default function SignupScreen() {
        * Send brugeren videre til vores
        * OTP-side.
        */
+
       router.push({
         pathname: '/verify-email',
 
@@ -410,6 +442,7 @@ export default function SignupScreen() {
               autoCorrect={false}
               keyboardType="email-address"
               textContentType="emailAddress"
+              autoComplete="email"
               returnKeyType="next"
               editable={!loading}
               style={
@@ -453,27 +486,210 @@ export default function SignupScreen() {
               </Text>
             </View>
 
-            <TextInput
-              value={
-                password
-              }
-              onChangeText={
-                setPassword
-              }
-              placeholder="Vælg en adgangskode"
-              placeholderTextColor={
-                COLORS.lightMuted
-              }
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              textContentType="newPassword"
-              returnKeyType="done"
-              editable={!loading}
+            <View
               style={
-                styles.input
+                styles.passwordContainer
               }
-            />
+            >
+              <TextInput
+                value={
+                  password
+                }
+                onChangeText={
+                  setPassword
+                }
+                placeholder="Vælg en adgangskode"
+                placeholderTextColor={
+                  COLORS.lightMuted
+                }
+                secureTextEntry={
+                  !showPassword
+                }
+                autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="none"
+                autoComplete="off"
+                returnKeyType="next"
+                editable={!loading}
+                style={
+                  styles.passwordInput
+                }
+              />
+
+              <Pressable
+                onPress={() =>
+                  setShowPassword(
+                    (current) =>
+                      !current
+                  )
+                }
+                disabled={loading}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showPassword
+                    ? 'Skjul adgangskode'
+                    : 'Vis adgangskode'
+                }
+                accessibilityState={{
+                  selected:
+                    showPassword,
+
+                  disabled:
+                    loading,
+                }}
+                style={({
+                  pressed,
+                }) => [
+                  styles.passwordToggle,
+
+                  showPassword &&
+                    styles.passwordToggleVisible,
+
+                  pressed &&
+                    !loading &&
+                    styles.passwordTogglePressed,
+
+                  loading &&
+                    styles.passwordToggleDisabled,
+                ]}
+              >
+                <Ionicons
+                  name={
+                    showPassword
+                      ? 'eye-outline'
+                      : 'eye-off-outline'
+                  }
+                  size={21}
+                  color={
+                    showPassword
+                      ? COLORS.navy
+                      : COLORS.lightMuted
+                  }
+                />
+              </Pressable>
+            </View>
+          </View>
+
+          {/* GENTAG ADGANGSKODE */}
+
+          <View
+            style={
+              styles.field
+            }
+          >
+            <View
+              style={
+                styles.labelRow
+              }
+            >
+              <View
+                style={
+                  styles.labelIcon
+                }
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={15}
+                  color={
+                    COLORS.navy
+                  }
+                />
+              </View>
+
+              <Text
+                style={
+                  styles.label
+                }
+              >
+                Gentag adgangskode
+              </Text>
+            </View>
+
+            <View
+              style={
+                styles.passwordContainer
+              }
+            >
+              <TextInput
+                value={
+                  confirmPassword
+                }
+                onChangeText={
+                  setConfirmPassword
+                }
+                placeholder="Gentag din adgangskode"
+                placeholderTextColor={
+                  COLORS.lightMuted
+                }
+                secureTextEntry={
+                  !showConfirmPassword
+                }
+                autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="none"
+                autoComplete="off"
+                returnKeyType="done"
+                blurOnSubmit
+                editable={!loading}
+                style={
+                  styles.passwordInput
+                }
+              />
+
+              <Pressable
+                onPress={() =>
+                  setShowConfirmPassword(
+                    (current) =>
+                      !current
+                  )
+                }
+                disabled={loading}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showConfirmPassword
+                    ? 'Skjul gentaget adgangskode'
+                    : 'Vis gentaget adgangskode'
+                }
+                accessibilityState={{
+                  selected:
+                    showConfirmPassword,
+
+                  disabled:
+                    loading,
+                }}
+                style={({
+                  pressed,
+                }) => [
+                  styles.passwordToggle,
+
+                  showConfirmPassword &&
+                    styles.passwordToggleVisible,
+
+                  pressed &&
+                    !loading &&
+                    styles.passwordTogglePressed,
+
+                  loading &&
+                    styles.passwordToggleDisabled,
+                ]}
+              >
+                <Ionicons
+                  name={
+                    showConfirmPassword
+                      ? 'eye-outline'
+                      : 'eye-off-outline'
+                  }
+                  size={21}
+                  color={
+                    showConfirmPassword
+                      ? COLORS.navy
+                      : COLORS.lightMuted
+                  }
+                />
+              </Pressable>
+            </View>
           </View>
 
           {/* OPRET */}
@@ -687,6 +903,71 @@ const styles =
 
       color:
         COLORS.text,
+    },
+
+    /* PASSWORD */
+
+    passwordContainer: {
+      height: 56,
+
+      borderRadius: 16,
+
+      backgroundColor:
+        COLORS.white,
+
+      borderWidth: 1,
+
+      borderColor:
+        '#E5E7EB',
+
+      paddingLeft: 18,
+      paddingRight: 8,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+    },
+
+    passwordInput: {
+      flex: 1,
+
+      height: '100%',
+
+      fontSize: 16,
+
+      color:
+        COLORS.text,
+
+      paddingVertical: 0,
+      paddingRight: 10,
+    },
+
+    passwordToggle: {
+      width: 40,
+      height: 40,
+
+      borderRadius: 12,
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'center',
+    },
+
+    passwordToggleVisible: {
+      backgroundColor:
+        COLORS.navySoft,
+    },
+
+    passwordTogglePressed: {
+      opacity: 0.6,
+    },
+
+    passwordToggleDisabled: {
+      opacity: 0.5,
     },
 
     /* BUTTON */
