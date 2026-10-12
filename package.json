@@ -17,6 +17,7 @@
     "doctor": "npx expo-doctor@latest",
     "check": "npx expo install --check",
     "build:aab": "eas build --platform android --profile production",
+    "build:aab:local": "mkdir -p builds && eas build --platform android --profile production --local --output ./builds/protogo.aab",
     "builds": "eas build:list --platform android --profile production --limit 3"
   },
   "dependencies": {
