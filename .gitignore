@@ -45,3 +45,8 @@ app-example
 .env
 .env.local
 .env.*.env
+
+# Android signing credentials
+credentials.json
+*.jks
+*.keystore
