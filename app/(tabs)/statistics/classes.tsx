@@ -1988,11 +1988,16 @@ const styles =
       },
 
       shadowOpacity:
-        0.04,
+        0.08,
 
       shadowRadius: 14,
 
       elevation: 1,
+
+      borderWidth: 1,
+
+      borderColor:
+        '#E6E9EE',
     },
 
     statIcon: {
@@ -2069,11 +2074,16 @@ const styles =
       },
 
       shadowOpacity:
-        0.04,
+        0.08,
 
       shadowRadius: 14,
 
       elevation: 1,
+
+      borderWidth: 1,
+
+      borderColor:
+        '#E6E9EE',
     },
 
     secondaryStatIcon: {
@@ -2128,11 +2138,16 @@ const styles =
       },
 
       shadowOpacity:
-        0.04,
+        0.08,
 
       shadowRadius: 14,
 
       elevation: 1,
+
+      borderWidth: 1,
+
+      borderColor:
+        '#E6E9EE',
     },
 
     chartHeader: {

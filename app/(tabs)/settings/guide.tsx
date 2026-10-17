@@ -454,9 +454,14 @@ const styles = StyleSheet.create({
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.08,
     shadowRadius: 14,
     elevation: 1,
+
+    borderWidth: 1,
+
+    borderColor:
+      '#E6E9EE',
   },
 
   introIcon: {
@@ -510,9 +515,14 @@ const styles = StyleSheet.create({
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.08,
     shadowRadius: 14,
     elevation: 1,
+
+    borderWidth: 1,
+
+    borderColor:
+      '#E6E9EE',
   },
 
   sectionHeader: {

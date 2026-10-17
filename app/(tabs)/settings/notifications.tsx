@@ -1417,11 +1417,16 @@ const styles =
         height: 4,
       },
 
-      shadowOpacity: 0.04,
+      shadowOpacity: 0.08,
 
       shadowRadius: 14,
 
       elevation: 1,
+
+      borderWidth: 1,
+
+      borderColor:
+        '#E6E9EE',
     },
 
     reminderHeader: {
@@ -1719,11 +1724,16 @@ const styles =
         height: 4,
       },
 
-      shadowOpacity: 0.04,
+      shadowOpacity: 0.08,
 
       shadowRadius: 14,
 
       elevation: 1,
+
+      borderWidth: 1,
+
+      borderColor:
+        '#E6E9EE',
     },
 
     permissionIcon: {
